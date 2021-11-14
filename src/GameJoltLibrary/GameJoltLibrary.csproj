@@ -1,0 +1,58 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net462</TargetFramework>
+    <LangVersion>10.0</LangVersion>
+    <UseWPF>true</UseWPF>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>C:\Code\Reference_Applications\Playnite\Playnite\source\Playnite.DesktopApp\bin\x86\Debug\Extensions\GameJolt</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\..\playniterepo\source\playnite\common\Programs.cs">
+      <Link>Shared\%(Filename).cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\playniterepo\source\playnite\common\FileSystem.cs">
+      <Link>Shared\%(Filename).cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\playniterepo\source\playnite\common\Paths.cs">
+      <Link>Shared\%(Filename).cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\playniterepo\source\playnite\common\ProcessStarter.cs">
+      <Link>Shared\%(Filename).cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\playniterepo\source\playnite\common\Web\HttpDownloader.cs">
+      <Link>Shared\%(Filename).cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\playniterepo\source\playnite\common\Web\Downloader.cs">
+      <Link>Shared\%(Filename).cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\playniterepo\source\playnite\common\extensions\StringExtensions.cs">
+      <Link>Shared\extensions\%(Filename).cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\PlayniteRepo\source\playnite\native\*.cs">
+      <Link>Shared\Native\%(Filename).cs</Link>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AngleSharp" Version="0.9.9" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="PlayniteSDK" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Web" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="extension.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\GameJoltIcon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
