@@ -58,7 +58,7 @@ namespace GameJoltLibrary
 
             if (File.Exists(installedGamesInfoFile))
             {
-                logger.Info("Found GameJolt file packages.wttf");
+                logger.Info($"Found GameJolt file {installedGamesInfoFile}");
                 var installedGamesInfo = Serialization.FromJsonFile<InstalledGamesInfo>(installedGamesInfoFile);
 
                 var installedGamesMetadata = GetGamesMetadata();
@@ -99,6 +99,10 @@ namespace GameJoltLibrary
 
                     games.Add(gameInfo.GameId, gameInfo);
                 }
+            }
+            else
+            {
+                logger.Warn($"Not found GameJolt file {installedGamesInfoFile}");
             }
 
             return games;
