@@ -5,6 +5,7 @@
     <LangVersion>10.0</LangVersion>
     <UseWPF>true</UseWPF>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>..\..\build\$(Configuration)</OutputPath>
     <PlayniteSourcePath>..\..\ref\PlayniteRepo\source\playnite</PlayniteSourcePath>
   </PropertyGroup>
 
