@@ -3,12 +3,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:gamejoltlibrary="clr-namespace:GameJoltLibrary"
+             d:DataContext="{d:DesignInstance Type=gamejoltlibrary:GameJoltLibrarySettingsViewModel}"
              mc:Ignorable="d"
              d:DesignHeight="400" d:DesignWidth="600">
-    <StackPanel>
-        <TextBlock Text="Description for Option1:"/>
-        <TextBox Text="{Binding Settings.Option1}"/>
-        <TextBlock Text="Description for Option2:"/>
-        <CheckBox IsChecked="{Binding Settings.Option2}"/>
+    <StackPanel Margin="20">
+        <CheckBox DockPanel.Dock="Top" Name="CheckGameJoltImportInstalled"
+                  Margin="0,0,0,15"
+                  IsChecked="{Binding Settings.ImportInstalledGames}"
+                  Content="Import installed games"
+                  d:Content="Import installed games"/>
     </StackPanel>
 </UserControl>

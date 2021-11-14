@@ -20,8 +20,7 @@ namespace GameJoltLibrary
 
         public override Guid Id { get; } = Guid.Parse("555d58fd-a000-401b-972c-9230bed81aed");
 
-        // Change to something more appropriate
-        public override string Name => "GameJolt Library";
+        public override string Name => "Game Jolt";
 
         // Implementing Client adds ability to open it via special menu in playnite.
         public override LibraryClient Client { get; } = new GameJoltClient();
@@ -68,7 +67,13 @@ namespace GameJoltLibrary
                     InstalledGameMetadata installedGameMetadata = null;
                     installedGamesMetadata?.Objects?.TryGetValue(installedGameInfo.GameId, out installedGameMetadata);
 
-                    var gameExecutablePath = Path.Combine(installedGameInfo.InstallDir, "data", installedGameInfo.LaunchOptions[0].ExecutablePath);
+                    if (installedGameInfo.InstallDir is null)
+                    {
+                        continue;
+                    }
+
+                    string relativeGameIExecutablePath = installedGameInfo.LaunchOptions[0].ExecutablePath;
+                    string gameExecutablePath = !string.IsNullOrEmpty(relativeGameIExecutablePath) ? Path.Combine(installedGameInfo.InstallDir, "data", relativeGameIExecutablePath) : null;
 
                     using var icon = Icon.ExtractAssociatedIcon(gameExecutablePath);
                     using var image = icon.ToBitmap();
@@ -87,13 +92,13 @@ namespace GameJoltLibrary
                         GameActions = new List<GameAction>()
                     };
 
-                    if (installedGameInfo != null && installedGameInfo.LaunchOptions.Any() && installedGameInfo.LaunchOptions[0]?.ExecutablePath != null)
+                    if (installedGameInfo != null && installedGameInfo.LaunchOptions.Any() && gameExecutablePath != null)
                     {
                         gameInfo.GameActions.Add(new GameAction
                         {
                             IsPlayAction = true,
                             Type = GameActionType.File,
-                            Path = Path.Combine(installedGameInfo.InstallDir, "data", installedGameInfo.LaunchOptions[0].ExecutablePath),
+                            Path = gameExecutablePath,
                         });
                     }
 

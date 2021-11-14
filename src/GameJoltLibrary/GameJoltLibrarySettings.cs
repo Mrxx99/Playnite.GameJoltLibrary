@@ -1,26 +1,13 @@
-﻿using Playnite.SDK;
+﻿using System.Collections.Generic;
+using Playnite.SDK;
 using Playnite.SDK.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GameJoltLibrary
 {
     public class GameJoltLibrarySettings : ObservableObject
     {
-        private string option1 = string.Empty;
-        private bool option2 = false;
-        private bool optionThatWontBeSaved = false;
-
-        public string Option1 { get => option1; set => SetValue(ref option1, value); }
-        public bool Option2 { get => option2; set => SetValue(ref option2, value); }
-        public bool ImportInstalledGames { get; set; } = GameJolt.IsInstalled;
-        // Playnite serializes settings object to a JSON object and saves it as text file.
-        // If you want to exclude some property from being saved then use `JsonDontSerialize` ignore attribute.
-        [DontSerialize]
-        public bool OptionThatWontBeSaved { get => optionThatWontBeSaved; set => SetValue(ref optionThatWontBeSaved, value); }
+        private bool importInstalledGames = true;
+        public bool ImportInstalledGames { get => importInstalledGames; set => SetValue(ref importInstalledGames, value); }
     }
 
     public class GameJoltLibrarySettingsViewModel : ObservableObject, ISettings
@@ -29,15 +16,7 @@ namespace GameJoltLibrary
         private GameJoltLibrarySettings editingClone { get; set; }
 
         private GameJoltLibrarySettings settings;
-        public GameJoltLibrarySettings Settings
-        {
-            get => settings;
-            set
-            {
-                settings = value;
-                OnPropertyChanged();
-            }
-        }
+        public GameJoltLibrarySettings Settings { get => settings; set => SetValue(ref settings, value); }
 
         public GameJoltLibrarySettingsViewModel(GameJoltLibrary plugin)
         {
@@ -54,7 +33,7 @@ namespace GameJoltLibrary
             }
             else
             {
-                Settings = new GameJoltLibrarySettings();
+                Settings = new GameJoltLibrarySettings { ImportInstalledGames = true };
             }
         }
 
