@@ -40,42 +40,6 @@ namespace GameJoltLibrary
         {
             // Return list of user's games.
             return GetInstalledGames().Values.ToList();
-            //return new List<GameMetadata>()
-            //{
-            //    new GameMetadata()
-            //    {
-            //        Name = "Notepad",
-            //        GameId = "notepad",
-            //        GameActions = new List<GameAction>
-            //        {
-            //            new GameAction()
-            //            {
-            //                Type = GameActionType.File,
-            //                Path = "notepad.exe",
-            //                IsPlayAction = true
-            //            }
-            //        },
-            //        IsInstalled = true,
-            //        Icon = new MetadataFile(@"c:\Windows\notepad.exe")
-            //    },
-            //    new GameMetadata()
-            //    {
-            //        Name = "Calculator",
-            //        GameId = "calc",
-            //        GameActions = new List<GameAction>
-            //        {
-            //            new GameAction()
-            //            {
-            //                Type = GameActionType.File,
-            //                Path = "calc.exe",
-            //                IsPlayAction = true
-            //            }
-            //        },
-            //        IsInstalled = true,
-            //        Icon = new MetadataFile(@"https://playnite.link/applogo.png"),
-            //        BackgroundImage = new MetadataFile(@"https://playnite.link/applogo.png")
-            //    }
-            //};
         }
 
 
