@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Web;
 using AngleSharp;
 using Playnite.SDK;
 using Playnite.SDK.Models;
@@ -48,7 +49,8 @@ namespace GameJoltLibrary
                 }
 
                 // Description
-                string storePageUrlEncoded = $"https%3A%2F%2Fgamejolt.com%2Fgames%2F{installedGameMetadata.Slug}%2F{installedGameMetadata.Id}";
+                string storePage = $"https://gamejolt.com/games/{installedGameMetadata.Slug}/{installedGameMetadata.Id}";
+                string storePageUrlEncoded = HttpUtility.UrlEncode(storePage);
 
                 string storePageInGoogleChacheUrl = $"http://webcache.googleusercontent.com/search?q=cache%3A{storePageUrlEncoded}";
 
@@ -60,7 +62,7 @@ namespace GameJoltLibrary
                 string description = descriptionElement.InnerHtml;
                 metadata.Description = description;
 
-                metadata.Links.Add(new Link("Game Jolt Store Page", $"https://gamejolt.com/games/{installedGameMetadata.Slug}/{gameId}"));
+                metadata.Links.Add(new Link("Game Jolt Store Page", storePage));
             }
 
             return metadata;
