@@ -1,0 +1,4 @@
+[submodule "ref/PlayniteRepo"]
+	path = ref/PlayniteRepo
+	url = https://github.com/JosefNemec/Playnite
+	branch = master

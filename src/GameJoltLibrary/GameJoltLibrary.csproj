@@ -5,40 +5,40 @@
     <LangVersion>10.0</LangVersion>
     <UseWPF>true</UseWPF>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <OutputPath>C:\Code\Reference_Applications\Playnite\Playnite\source\Playnite.DesktopApp\bin\x86\Debug\Extensions\GameJolt</OutputPath>
+    <PlayniteSourcePath>..\..\ref\PlayniteRepo\source\playnite</PlayniteSourcePath>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\..\playniterepo\source\playnite\common\Programs.cs">
-      <Link>Shared\%(Filename).cs</Link>
+    <Compile Include="$(PlayniteSourcePath)\common\Programs.cs">
+      <Link>Ref\Playnite\%(Filename).cs</Link>
     </Compile>
-    <Compile Include="..\..\..\playniterepo\source\playnite\common\FileSystem.cs">
-      <Link>Shared\%(Filename).cs</Link>
+    <Compile Include="$(PlayniteSourcePath)\common\FileSystem.cs">
+      <Link>Ref\Playnite\%(Filename).cs</Link>
     </Compile>
-    <Compile Include="..\..\..\playniterepo\source\playnite\common\Paths.cs">
-      <Link>Shared\%(Filename).cs</Link>
+    <Compile Include="$(PlayniteSourcePath)\common\Paths.cs">
+      <Link>Ref\Playnite\%(Filename).cs</Link>
     </Compile>
-    <Compile Include="..\..\..\playniterepo\source\playnite\common\ProcessStarter.cs">
-      <Link>Shared\%(Filename).cs</Link>
+    <Compile Include="$(PlayniteSourcePath)\common\ProcessStarter.cs">
+      <Link>Ref\Playnite\%(Filename).cs</Link>
     </Compile>
-    <Compile Include="..\..\..\playniterepo\source\playnite\common\Web\HttpDownloader.cs">
-      <Link>Shared\%(Filename).cs</Link>
+    <Compile Include="$(PlayniteSourcePath)\common\Web\HttpDownloader.cs">
+      <Link>Ref\Playnite\%(Filename).cs</Link>
     </Compile>
-    <Compile Include="..\..\..\playniterepo\source\playnite\common\Web\Downloader.cs">
-      <Link>Shared\%(Filename).cs</Link>
+    <Compile Include="$(PlayniteSourcePath)\common\Web\Downloader.cs">
+      <Link>Ref\Playnite\%(Filename).cs</Link>
     </Compile>
-    <Compile Include="..\..\..\playniterepo\source\playnite\common\extensions\StringExtensions.cs">
-      <Link>Shared\extensions\%(Filename).cs</Link>
+    <Compile Include="$(PlayniteSourcePath)\common\extensions\StringExtensions.cs">
+      <Link>Ref\Playnite\extensions\%(Filename).cs</Link>
     </Compile>
-    <Compile Include="..\..\..\PlayniteRepo\source\playnite\native\*.cs">
-      <Link>Shared\Native\%(Filename).cs</Link>
+    <Compile Include="$(PlayniteSourcePath)\native\*.cs">
+      <Link>Ref\Playnite\Native\%(Filename).cs</Link>
     </Compile>
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AngleSharp" Version="0.9.9" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Include="PlayniteSDK" Version="6.0.0" />
+    <PackageReference Include="PlayniteSDK" Version="6.1.0" />
   </ItemGroup>
 
   <ItemGroup>
