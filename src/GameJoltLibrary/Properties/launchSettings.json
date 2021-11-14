@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "GameJoltLibrary": {
+      "commandName": "Executable",
+      "executablePath": ".\\Playnite.DesktopApp.exe",
+      "workingDirectory": "..\\..\\ref\\PlayniteRepo\\source\\Playnite.DesktopApp\\bin\\Debug"
+    }
+  }
+}
