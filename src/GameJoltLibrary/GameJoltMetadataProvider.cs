@@ -8,6 +8,7 @@ using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Dom.Html;
 using AngleSharp.Extensions;
+using GameJoltLibrary.Models;
 using Playnite.SDK;
 using Playnite.SDK.Models;
 using Polly;
@@ -40,14 +41,12 @@ namespace GameJoltLibrary
                 Developers = new HashSet<MetadataProperty>(),
             };
 
-            var installedGamesMetadata = InstalledGamesProvider.GetGamesMetadata();
+            var installedGamesMetadata = InstalledGamesProvider.GetGamesMetadata(_logger);
 
             bool isIdParsable = int.TryParse(game.GameId, NumberStyles.Integer, CultureInfo.InvariantCulture, out int gameId);
 
-            if (isIdParsable && installedGamesMetadata.Objects.ContainsKey(gameId))
+            if (isIdParsable && installedGamesMetadata.TryGetValue(gameId, out var installedGameMetadata))
             {
-                var installedGameMetadata = installedGamesMetadata.Objects[gameId];
-
                 // Cover image
                 if (!string.IsNullOrEmpty(installedGameMetadata.ThumbnailMediaItem?.ImgUrl?.AbsolutePath))
                 {
