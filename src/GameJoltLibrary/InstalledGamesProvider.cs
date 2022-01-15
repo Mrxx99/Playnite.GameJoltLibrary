@@ -48,7 +48,7 @@ public class InstalledGamesProvider
 
             };
 
-            foreach (var package in packagesForGame)
+            foreach (var package in packagesForGame.Where(p => !string.IsNullOrEmpty(p.InstallDir)))
             {
                 var launchOption = GetFittingLaunchOption(package);
 

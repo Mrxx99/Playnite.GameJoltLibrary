@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Threading;
 using System.Web;
 using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Dom.Html;
 using AngleSharp.Extensions;
-using GameJoltLibrary.Models;
 using Playnite.SDK;
 using Playnite.SDK.Models;
 using Polly;
@@ -61,7 +59,7 @@ namespace GameJoltLibrary
 
                 // Developer
                 if (!string.IsNullOrEmpty(installedGameMetadata.Developer?.DisplayName))
-                 {
+                {
                     metadata.Developers.Add(new MetadataNameProperty(installedGameMetadata.Developer.DisplayName));
                 }
 
