@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Playnite.SDK.Data;
 
 namespace GameJoltLibrary
@@ -85,6 +86,8 @@ namespace GameJoltLibrary
 
         [SerializationPropertyName("executable_path")]
         public string ExecutablePath { get; set; }
+
+        public bool IsValid() => !string.IsNullOrEmpty(ExecutablePath) && !string.IsNullOrEmpty(Os);
     }
 
     public class Release

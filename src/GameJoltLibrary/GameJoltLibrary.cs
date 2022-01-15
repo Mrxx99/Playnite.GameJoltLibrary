@@ -15,6 +15,7 @@ namespace GameJoltLibrary
     public class GameJoltLibrary : LibraryPlugin
     {
         private static readonly ILogger logger = LogManager.GetLogger();
+        public InstalledGamesProvider InstalledGamesProvider { get; }
 
         private GameJoltLibrarySettingsViewModel settingsViewModel { get; set; }
 
@@ -33,116 +34,26 @@ namespace GameJoltLibrary
                 HasSettings = true
             };
             logger.Info("GemeJolt library initialized.");
+            InstalledGamesProvider = new InstalledGamesProvider(logger);
         }
 
         public override IEnumerable<GameMetadata> GetGames(LibraryGetGamesArgs args)
         {
-            // Return list of user's games.
-            return GetInstalledGames().Values.ToList();
-        }
-
-
-        public Dictionary<string, GameMetadata> GetInstalledGames()
-        {
-            var games = new Dictionary<string, GameMetadata>();
-
             if (!GameJolt.IsInstalled || !settingsViewModel.Settings.ImportInstalledGames)
             {
-                return games;
+                return Array.Empty<GameMetadata>();
             }
 
-            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var gameJoltDefaultUserData = Path.Combine(localAppData, "game-jolt-client", "User Data", "Default");
-            var installedGamesInfoFile = Path.Combine(gameJoltDefaultUserData, "packages.wttf");
-
-            if (File.Exists(installedGamesInfoFile))
-            {
-                logger.Info($"Found GameJolt file {installedGamesInfoFile}");
-                var installedGamesInfo = Serialization.FromJsonFile<InstalledGamesInfo>(installedGamesInfoFile);
-
-                var installedGamesMetadata = GetGamesMetadata();
-
-                foreach (var installedGameInfo in installedGamesInfo.Objects.Values)
-                {
-                    InstalledGameMetadata installedGameMetadata = null;
-                    installedGamesMetadata?.Objects?.TryGetValue(installedGameInfo.GameId, out installedGameMetadata);
-
-                    if (installedGameInfo.InstallDir is null)
-                    {
-                        continue;
-                    }
-
-                    string relativeGameIExecutablePath = installedGameInfo.LaunchOptions[0].ExecutablePath;
-                    string gameExecutablePath = !string.IsNullOrEmpty(relativeGameIExecutablePath) ? Path.Combine(installedGameInfo.InstallDir, "data", relativeGameIExecutablePath) : null;
-
-                    using var icon = Icon.ExtractAssociatedIcon(gameExecutablePath);
-                    using var image = icon.ToBitmap();
-                    var iconBytes = ImageToByte(image);
-
-                    var gameInfo = new GameMetadata
-                    {
-                        Source = new MetadataNameProperty("Game Jolt"),
-                        GameId = installedGameInfo.GameId.ToString(),
-                        Name = (installedGameMetadata?.Title ?? installedGameInfo.Title),
-                        IsInstalled = true,
-                        Icon = new MetadataFile("icon", iconBytes),
-                        BackgroundImage = new MetadataFile(installedGameMetadata?.HeaderMediaItem.ImgUrl.AbsoluteUri),
-                        CoverImage = new MetadataFile(installedGameMetadata?.ThumbnailMediaItem.ImgUrl.AbsoluteUri),
-                        InstallDirectory = installedGameInfo.InstallDir,
-                        GameActions = new List<GameAction>()
-                    };
-
-                    if (installedGameInfo != null && installedGameInfo.LaunchOptions.Any() && gameExecutablePath != null)
-                    {
-                        gameInfo.GameActions.Add(new GameAction
-                        {
-                            IsPlayAction = true,
-                            Type = GameActionType.File,
-                            Path = gameExecutablePath,
-                        });
-                    }
-
-                    games.Add(gameInfo.GameId, gameInfo);
-                }
-            }
-            else
-            {
-                logger.Warn($"Not found GameJolt file {installedGamesInfoFile}");
-            }
+            var games = InstalledGamesProvider.GetInstalledGamesV2(args).Values.ToList();
 
             return games;
-        }
-
-        public static byte[] ImageToByte(Bitmap image)
-        {
-            //ImageConverter converter = new ImageConverter();
-            //return (byte[])converter.ConvertTo(image, typeof(byte[]));
-            using MemoryStream ms = new MemoryStream();
-            image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-            return ms.ToArray();
-        }
-
-        public static InstalledGamesMetadata GetGamesMetadata()
-        {
-            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var gameJoltDefaultUserData = Path.Combine(localAppData, "game-jolt-client", "User Data", "Default");
-
-            InstalledGamesMetadata installedGamesMetadata = null;
-
-            var installedGamesMetadataFile = Path.Combine(gameJoltDefaultUserData, "games.wttf");
-            if (File.Exists(installedGamesMetadataFile))
-            {
-                installedGamesMetadata = Serialization.FromJsonFile<InstalledGamesMetadata>(installedGamesMetadataFile);
-            }
-
-            return installedGamesMetadata;
         }
 
         public override string LibraryIcon => GameJolt.Icon;
 
         public override LibraryMetadataProvider GetMetadataDownloader()
         {
-            return new GameJoltMetadataProvider(this);
+            return new GameJoltMetadataProvider(this, logger);
         }
 
         public override ISettings GetSettings(bool firstRunSettings)
