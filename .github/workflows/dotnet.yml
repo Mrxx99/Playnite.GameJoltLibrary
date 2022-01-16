@@ -19,6 +19,8 @@ jobs:
 
     env:
       Solution_Path: src/GameJoltLibrary.sln
+      DOTNET_NOLOGO: true
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
       
     steps:
     - name: Checkout
@@ -37,7 +39,7 @@ jobs:
       uses: microsoft/setup-msbuild@v1.0.2
 
     - name: Restore dependencies
-      run: dotnet restore .-configuration ${{ matrix.configuration }} $env:Solution_Name
+      run: dotnet restore --configuration ${{ matrix.configuration }} $env:Solution_Name
     - name: Build
       run: dotnet build --no-restore --configuration ${{ matrix.configuration }}  $env:Solution_Name
     - name: Test
