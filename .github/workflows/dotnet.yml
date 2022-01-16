@@ -39,8 +39,8 @@ jobs:
       uses: microsoft/setup-msbuild@v1.0.2
 
     - name: Restore dependencies
-      run: dotnet restore $env:Solution_Name
+      run: dotnet restore $env:Solution_Path
     - name: Build
-      run: dotnet build --no-restore --configuration ${{ matrix.configuration }}  $env:Solution_Name
+      run: dotnet build --no-restore --configuration ${{ matrix.configuration }}  $env:Solution_Path
     - name: Test
-      run: dotnet test --no-build --verbosity normal --configuration ${{ matrix.configuration }}  $env:Solution_Name
+      run: dotnet test --no-build --verbosity normal --configuration ${{ matrix.configuration }}  $env:Solution_Path
