@@ -3,17 +3,17 @@ name: Create release
 on:
   workflow_dispatch:
     inputs:
-        version:
-          description: 'Version'     
-          required: true
-        pre-release:
-          description: 'Is this a pre-release?'
-          required: true
-          default: 'true'
-        draft:
-          description: 'Draft?'
-          required: true
-          default: 'true
+      version:
+        description: 'Version'     
+        required: true
+      pre-release:
+        description: 'Is this a pre-release?'
+        required: true
+        default: 'true'
+      draft:
+        description: 'Draft?'
+        required: true
+        default: 'true
 
 jobs:
   build:
