@@ -6,7 +6,7 @@ on:
       version:
         description: 'Version'     
         required: true
-      pre-release:
+      pre_release:
         description: 'Is this a pre-release?'
         required: true
         default: 'true'
