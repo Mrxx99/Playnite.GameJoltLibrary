@@ -13,7 +13,7 @@ on:
       draft:
         description: 'Draft?'
         required: true
-        default: 'true
+        default: 'true'
 
 jobs:
   build:
