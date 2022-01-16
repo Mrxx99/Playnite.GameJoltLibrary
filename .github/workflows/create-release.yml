@@ -47,7 +47,7 @@ jobs:
         
       - name: Build Playnite
         run: |
-          ref/PlayniteRepo/build.ps1
+          ref/PlayniteRepo/build/build.ps1
           
       - name: pack GameJolLibrary
         run: |
