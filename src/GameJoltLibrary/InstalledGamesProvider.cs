@@ -148,7 +148,7 @@ public class InstalledGamesProvider
         return ms.ToArray();
     }
 
-    public static IReadOnlyDictionary<long, InstalledGameMetadata> GetGamesMetadata(ILogger logger)
+    public static IReadOnlyDictionary<long, GameJoltGameMetadata> GetGamesMetadata(ILogger logger)
     {
         var installedGamesMetadataFile = Path.Combine(_gameJoltUserDataPath, "games.wttf");
 
@@ -173,7 +173,7 @@ public class InstalledGamesProvider
 
         if (installedGamesMetadata?.Objects?.Values is null)
         {
-            return new Dictionary<long, InstalledGameMetadata>();
+            return new Dictionary<long, GameJoltGameMetadata>();
         }
 
         var filtered = installedGamesMetadata?.Objects?.Where(i => i.Value != null);

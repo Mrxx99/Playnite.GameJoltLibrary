@@ -1,12 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Windows.Controls;
-using GameJoltLibrary.Models;
 using Playnite.SDK;
-using Playnite.SDK.Data;
 using Playnite.SDK.Models;
 using Playnite.SDK.Plugins;
 
@@ -14,8 +10,10 @@ namespace GameJoltLibrary
 {
     public class GameJoltLibrary : LibraryPlugin
     {
-        private static readonly ILogger logger = LogManager.GetLogger();
+        private static readonly ILogger _logger = LogManager.GetLogger();
         public InstalledGamesProvider InstalledGamesProvider { get; }
+        public LibraryGamesProvider LibraryGamesProvider { get; }
+        public GameJoltMetadataProvider MetadataProvider { get; }
 
         private GameJoltLibrarySettingsViewModel settingsViewModel { get; set; }
 
@@ -33,8 +31,10 @@ namespace GameJoltLibrary
             {
                 HasSettings = true
             };
-            logger.Info("GemeJolt library initialized.");
-            InstalledGamesProvider = new InstalledGamesProvider(logger);
+            _logger.Info("GemeJolt library initialized.");
+            InstalledGamesProvider = new InstalledGamesProvider(_logger);
+            LibraryGamesProvider = new LibraryGamesProvider(_logger);
+            MetadataProvider = new GameJoltMetadataProvider(this, _logger);
         }
 
         public override IEnumerable<GameMetadata> GetGames(LibraryGetGamesArgs args)
@@ -46,6 +46,13 @@ namespace GameJoltLibrary
 
             var games = InstalledGamesProvider.GetInstalledGamesV2(args).Values.ToList();
 
+            if (settingsViewModel.Settings.UserName is string userName)
+            {
+                var libraryGames = LibraryGamesProvider.GetLibraryGames(userName);
+                var libraryGamesToAdd = libraryGames.Where(game => !games.Any(game => game.GameId == game.GameId));
+                games.AddRange(libraryGames);
+            }
+
             return games;
         }
 
@@ -53,7 +60,7 @@ namespace GameJoltLibrary
 
         public override LibraryMetadataProvider GetMetadataDownloader()
         {
-            return new GameJoltMetadataProvider(this, logger);
+            return MetadataProvider;
         }
 
         public override ISettings GetSettings(bool firstRunSettings)
