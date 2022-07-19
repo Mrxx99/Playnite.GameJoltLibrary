@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net.Http;
 using System.Web;
 using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Dom.Html;
 using AngleSharp.Extensions;
+using GameJoltLibrary.Models;
 using Playnite.SDK;
+using Playnite.SDK.Data;
 using Playnite.SDK.Models;
 using Polly;
 using Polly.Retry;
@@ -19,6 +22,7 @@ namespace GameJoltLibrary
         private readonly GameJoltLibrary _gameJoltLibrary;
         private readonly ILogger _logger;
         private readonly RetryPolicy<IElement> _retryPolicy;
+        private IReadOnlyDictionary<long, GameJoltGameMetadata> _onlineGamesMetadata;
 
         public GameJoltMetadataProvider(GameJoltLibrary gameJoltLibrary, ILogger logger)
         {
@@ -41,58 +45,96 @@ namespace GameJoltLibrary
                 Developers = new HashSet<MetadataProperty>(),
             };
 
-            var installedGamesMetadata = InstalledGamesProvider.GetGamesMetadata(_logger);
-
             bool isIdParsable = int.TryParse(game.GameId, NumberStyles.Integer, CultureInfo.InvariantCulture, out int gameId);
 
-            if (isIdParsable && installedGamesMetadata.TryGetValue(gameId, out var installedGameMetadata))
+            if (!isIdParsable)
             {
-                // Cover image
-                if (!string.IsNullOrEmpty(installedGameMetadata.ThumbnailMediaItem?.ImgUrl?.AbsolutePath))
+                return metadata;
+            }
+
+            if (game.IsInstalled)
+            {
+                var installedGamesMetadata = InstalledGamesProvider.GetGamesMetadata(_logger);
+
+                if (installedGamesMetadata.TryGetValue(gameId, out var installedGameMetadata))
                 {
-                    metadata.CoverImage = new MetadataFile(installedGameMetadata.ThumbnailMediaItem.ImgUrl.AbsoluteUri);
+                    ApplyMetadata(game, metadata, installedGameMetadata);
                 }
+            }
+            else
+            {
+                _onlineGamesMetadata ??= GetOnlineMetadata();
 
-                // Background image
-                if (!string.IsNullOrEmpty(installedGameMetadata.HeaderMediaItem?.ImgUrl?.AbsolutePath))
+                if (_onlineGamesMetadata.TryGetValue(gameId, out var onlineGameMetadata))
                 {
-                    metadata.BackgroundImage = new MetadataFile(installedGameMetadata.HeaderMediaItem.ImgUrl.AbsoluteUri);
+                    ApplyMetadata(game, metadata, onlineGameMetadata);
                 }
-
-                // Developer
-                if (!string.IsNullOrEmpty(installedGameMetadata.Developer?.DisplayName))
-                {
-                    metadata.Developers.Add(new MetadataNameProperty(installedGameMetadata.Developer.DisplayName));
-                }
-
-                string storePage = $"https://gamejolt.com/games/{installedGameMetadata.Slug}/{installedGameMetadata.Id}";
-
-                // Description
-                metadata.Description = GetDescription(game, storePage);
-
-                metadata.Links.Add(new Link("Game Jolt Store Page", storePage));
             }
 
             return metadata;
         }
 
-        private string GetDescription(Game game, string storePage)
+        private void ApplyMetadata(Game game, GameMetadata metadata, GameJoltGameMetadata gameJoltMetadata)
+        {
+            // Cover image
+            if (!string.IsNullOrEmpty(gameJoltMetadata.ThumbnailMediaItem?.ImgUrl?.AbsolutePath))
+            {
+                metadata.CoverImage = new MetadataFile(gameJoltMetadata.ThumbnailMediaItem.ImgUrl.AbsoluteUri);
+            }
+            else if (!string.IsNullOrEmpty(gameJoltMetadata.ImageThumbnail?.AbsolutePath))
+            {
+                metadata.CoverImage = new MetadataFile(gameJoltMetadata.ImageThumbnail.AbsolutePath);
+            }
+
+            // Background image
+            if (!string.IsNullOrEmpty(gameJoltMetadata.HeaderMediaItem?.ImgUrl?.AbsolutePath))
+            {
+                metadata.BackgroundImage = new MetadataFile(gameJoltMetadata.HeaderMediaItem.ImgUrl.AbsoluteUri);
+            }
+
+            // Developer
+            if (!string.IsNullOrEmpty(gameJoltMetadata.Developer?.DisplayName))
+            {
+                metadata.Developers.Add(new MetadataNameProperty(gameJoltMetadata.Developer.DisplayName));
+            }
+
+            string storePage = $"https://gamejolt.com/games/{gameJoltMetadata.Slug}/{gameJoltMetadata.Id}";
+
+            // Description
+            metadata.Description = GetDescription(game.Name, storePage);
+
+            metadata.Links.Add(new Link("Game Jolt Store Page", storePage));
+        }
+
+        private IReadOnlyDictionary<long, GameJoltGameMetadata> GetOnlineMetadata()
+        {
+            var http = new HttpClient();
+            http.BaseAddress = new Uri("https://gamejolt.com/site-api/");
+
+            var result = http.GetAsync("web/library/games/owned/@mrxx99").GetAwaiter().GetResult();
+
+            var stringContent = result.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+
+            var ownedGames = Serialization.FromJsonStream<LibraryGamesResult>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
+
+            return ownedGames.Payload.Games.ToDictionary(kv => kv.Id);
+        }
+
+        public string GetDescription(string gameName, string storePage, IBrowsingContext browsingContext)
         {
             try
             {
-                var config = Configuration.Default.WithDefaultLoader();
-                var context = BrowsingContext.New(config);
                 IElement descriptionElement = null;
 
                 using (var webView = _gameJoltLibrary.PlayniteApi.WebViews.CreateOffscreenView(new WebViewSettings { JavaScriptEnabled = true }))
                 {
                     webView.NavigateAndWait(storePage);
-                    descriptionElement = _retryPolicy.Execute(() => GetDescriptionFromWebView(storePage, context, webView));
+                    descriptionElement = _retryPolicy.Execute(() => GetDescriptionFromWebView(storePage, browsingContext, webView));
                 }
 
                 if (descriptionElement is null)
                 {
-                    descriptionElement = GetDescriptionFromGoogleCache(storePage, context);
+                    descriptionElement = GetDescriptionFromGoogleCache(storePage, browsingContext);
                 }
 
                 if (descriptionElement == null)
@@ -106,7 +148,23 @@ namespace GameJoltLibrary
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, $"Failed to get description for game {game.Name}");
+                _logger.Error(ex, $"Failed to get description for game {gameName}");
+                return null;
+            }
+        }
+
+        private string GetDescription(string gameName, string storePage)
+        {
+            try
+            {
+                var config = Configuration.Default.WithDefaultLoader();
+                var context = BrowsingContext.New(config);
+
+                return GetDescription(gameName, storePage, context);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, $"Failed to get description for game {gameName}");
                 return null;
             }
         }
@@ -146,13 +204,13 @@ namespace GameJoltLibrary
             var descriptionElement = document.QuerySelector(".game-description-content");
             if (descriptionElement is null && pageSource.Contains("game-maturity-block"))
             {
-                AcceptMaturityWarning(webView, storePage, _logger);
+                AcceptMaturityWarning(webView, storePage);
             }
 
             return descriptionElement;
         }
 
-        public static void AcceptMaturityWarning(IWebView webView, string storePage, ILogger logger)
+        private void AcceptMaturityWarning(IWebView webView, string storePage)
         {
             try
             {
@@ -160,7 +218,7 @@ namespace GameJoltLibrary
             }
             catch (Exception ex)
             {
-                logger.Warn(ex, $"Could not accept maturity warning for game {storePage}");
+                _logger.Warn(ex, $"Could not accept maturity warning for game {storePage}");
             }
         }
     }

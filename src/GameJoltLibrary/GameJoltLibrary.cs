@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Windows.Controls;
 using AngleSharp;
 using AngleSharp.Dom.Html;
+using GameJoltLibrary.Models;
+using Newtonsoft.Json;
 using Playnite.SDK;
+using Playnite.SDK.Data;
 using Playnite.SDK.Models;
 using Playnite.SDK.Plugins;
 
@@ -15,6 +19,8 @@ namespace GameJoltLibrary
     {
         private static readonly ILogger logger = LogManager.GetLogger();
         public InstalledGamesProvider InstalledGamesProvider { get; }
+
+        public GameJoltMetadataProvider MetadataProvider { get; }
 
         private GameJoltLibrarySettingsViewModel settingsViewModel { get; set; }
 
@@ -34,6 +40,7 @@ namespace GameJoltLibrary
             };
             logger.Info("GemeJolt library initialized.");
             InstalledGamesProvider = new InstalledGamesProvider(logger);
+            MetadataProvider = new GameJoltMetadataProvider(this, logger);
         }
 
         public override IEnumerable<GameMetadata> GetGames(LibraryGetGamesArgs args)
@@ -59,63 +66,36 @@ namespace GameJoltLibrary
                 var settings = settingsViewModel.Settings;
                 string ownedGamesUrl = $"https://gamejolt.com/@{settings.UserName}/owned";
 
-                var webView = PlayniteApi.WebViews.CreateOffscreenView(new WebViewSettings { JavaScriptEnabled = true, WindowHeight = 480, WindowWidth = 640 });
+                var http = new HttpClient();
+                http.BaseAddress = new Uri("https://gamejolt.com/site-api/");
 
-                webView.NavigateAndWait(ownedGamesUrl);
+                var result = http.GetAsync("web/library/games/owned/@mrxx99").GetAwaiter().GetResult();
+
+                var stringContent = result.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+
+                var ownedGames = Serialization.FromJsonStream<LibraryGamesResult>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
+
                 var config = Configuration.Default.WithDefaultLoader();
                 var context = BrowsingContext.New(config);
-                Thread.Sleep(10_000);
-                var pageSource = webView.GetPageSource();
 
-                var document = context.OpenAsync(req => req.Content(pageSource).Address("https://gamejolt.com")).GetAwaiter().GetResult();
-
-                var gamesGridElement = document.QuerySelector(".game-grid-items");
-                var gameLinks = gamesGridElement.QuerySelectorAll(".game-thumbnail")
-                    .OfType<IHtmlAnchorElement>()
-                    .Select(a => a.Href);
-
-                webView.Dispose();
-
-                foreach (var gameLink in gameLinks)
+                foreach (var ownedGame in ownedGames.Payload.Games)
                 {
-                    using var gameWebView = PlayniteApi.WebViews.CreateOffscreenView(new WebViewSettings { JavaScriptEnabled = true, WindowHeight = 480, WindowWidth = 640 });
-                    gameWebView.NavigateAndWait(gameLink);
-                    Thread.Sleep(15_000);
-                    var gamepageSource = gameWebView.GetPageSource();
-
-                    if (gamepageSource.Contains("game-maturity-block"))
-                    {
-                        GameJoltMetadataProvider.AcceptMaturityWarning(gameWebView, gameLink, logger);
-                        Thread.Sleep(15_000);
-                        gamepageSource = gameWebView.GetPageSource();
-                    }
-
-                    var gameDocument = context.OpenAsync(req => req.Content(gamepageSource).Address("https://gamejolt.com")).GetAwaiter().GetResult();
-
-                    string name = gameDocument.QuerySelector("meta[property=\"og:title\"]")?.GetAttribute("content");
-
-                    var a = gameWebView.GetCurrentAddress();
-
                     var game = new GameMetadata
                     {
+                        GameId = ownedGame.Id.ToString(),
                         Source = new MetadataNameProperty("Game Jolt"),
-                        Name = gameDocument.QuerySelector("meta[property=\"og:title\"]")?.GetAttribute("content"),
+                        Name = ownedGame.Title,
                         IsInstalled = false,
-                        Links = new List<Link>()
+                        Links = new List<Link> { new Link("store page web", ownedGame.Link) },
+                        Developers = new HashSet<MetadataProperty> { new MetadataNameProperty(ownedGame.Developer.DisplayName) }
                     };
 
-                    if (gameDocument.QuerySelector("meta[property=\"og:image\"]")?.GetAttribute("content") is string ocverImagUrl)
-                    {
-                        game.CoverImage = new MetadataFile(ocverImagUrl);
-                    }
-
-                    game.Links.Add(new Link("store page web", gameLink));
                     games.Add(game);
                 }
             }
             catch (Exception ex)
             {
-
+                logger.Error(ex, "Error during loading library games for Game Jolt");
             }
 
             return games;
@@ -125,7 +105,7 @@ namespace GameJoltLibrary
 
         public override LibraryMetadataProvider GetMetadataDownloader()
         {
-            return new GameJoltMetadataProvider(this, logger);
+            return MetadataProvider;
         }
 
         public override ISettings GetSettings(bool firstRunSettings)

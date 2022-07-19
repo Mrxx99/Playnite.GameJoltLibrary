@@ -11,10 +11,10 @@ namespace GameJoltLibrary.Models
         public long Version { get; set; }
 
         [SerializationPropertyName("objects")]
-        public Dictionary<long, InstalledGameMetadata> Objects { get; set; }
+        public Dictionary<long, GameJoltGameMetadata> Objects { get; set; }
     }
 
-    public class InstalledGameMetadata
+    public class GameJoltGameMetadata
     {
         [SerializationPropertyName("id")]
         public long Id { get; set; }
@@ -37,8 +37,13 @@ namespace GameJoltLibrary.Models
         [SerializationPropertyName("thumbnail_media_item")]
         public MediaItem ThumbnailMediaItem { get; set; }
 
+        [SerializationPropertyName("img_thumbnail")]
+        public Uri ImageThumbnail { get; set; }
+
         [SerializationPropertyName("developer")]
         public Developer Developer { get; set; }
+
+        public string Link => $"https://gamejolt.com/games/{Slug}/{Id}";
     }
 
     public partial class Compatibility
