@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows.Controls;
-using GameJoltLibrary.Models;
+using AngleSharp;
+using AngleSharp.Dom.Html;
 using Playnite.SDK;
-using Playnite.SDK.Data;
 using Playnite.SDK.Models;
 using Playnite.SDK.Plugins;
 
@@ -45,6 +44,79 @@ namespace GameJoltLibrary
             }
 
             var games = InstalledGamesProvider.GetInstalledGamesV2(args).Values.ToList();
+            var libraryGames = GetLibraryGames();
+
+            games.AddRange(libraryGames);
+            return games;
+        }
+
+        public IEnumerable<GameMetadata> GetLibraryGames()
+        {
+            var games = new List<GameMetadata>();
+
+            try
+            {
+                var settings = settingsViewModel.Settings;
+                string ownedGamesUrl = $"https://gamejolt.com/@{settings.UserName}/owned";
+
+                var webView = PlayniteApi.WebViews.CreateOffscreenView(new WebViewSettings { JavaScriptEnabled = true, WindowHeight = 480, WindowWidth = 640 });
+
+                webView.NavigateAndWait(ownedGamesUrl);
+                var config = Configuration.Default.WithDefaultLoader();
+                var context = BrowsingContext.New(config);
+                Thread.Sleep(10_000);
+                var pageSource = webView.GetPageSource();
+
+                var document = context.OpenAsync(req => req.Content(pageSource).Address("https://gamejolt.com")).GetAwaiter().GetResult();
+
+                var gamesGridElement = document.QuerySelector(".game-grid-items");
+                var gameLinks = gamesGridElement.QuerySelectorAll(".game-thumbnail")
+                    .OfType<IHtmlAnchorElement>()
+                    .Select(a => a.Href);
+
+                webView.Dispose();
+
+                foreach (var gameLink in gameLinks)
+                {
+                    using var gameWebView = PlayniteApi.WebViews.CreateOffscreenView(new WebViewSettings { JavaScriptEnabled = true, WindowHeight = 480, WindowWidth = 640 });
+                    gameWebView.NavigateAndWait(gameLink);
+                    Thread.Sleep(15_000);
+                    var gamepageSource = gameWebView.GetPageSource();
+
+                    if (gamepageSource.Contains("game-maturity-block"))
+                    {
+                        GameJoltMetadataProvider.AcceptMaturityWarning(gameWebView, gameLink, logger);
+                        Thread.Sleep(15_000);
+                        gamepageSource = gameWebView.GetPageSource();
+                    }
+
+                    var gameDocument = context.OpenAsync(req => req.Content(gamepageSource).Address("https://gamejolt.com")).GetAwaiter().GetResult();
+
+                    string name = gameDocument.QuerySelector("meta[property=\"og:title\"]")?.GetAttribute("content");
+
+                    var a = gameWebView.GetCurrentAddress();
+
+                    var game = new GameMetadata
+                    {
+                        Source = new MetadataNameProperty("Game Jolt"),
+                        Name = gameDocument.QuerySelector("meta[property=\"og:title\"]")?.GetAttribute("content"),
+                        IsInstalled = false,
+                        Links = new List<Link>()
+                    };
+
+                    if (gameDocument.QuerySelector("meta[property=\"og:image\"]")?.GetAttribute("content") is string ocverImagUrl)
+                    {
+                        game.CoverImage = new MetadataFile(ocverImagUrl);
+                    }
+
+                    game.Links.Add(new Link("store page web", gameLink));
+                    games.Add(game);
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
 
             return games;
         }

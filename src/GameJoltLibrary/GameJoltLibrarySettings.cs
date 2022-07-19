@@ -1,13 +1,19 @@
 ﻿using System.Collections.Generic;
 using Playnite.SDK;
 using Playnite.SDK.Data;
+using System.Windows.Input;
+using System.Text.RegularExpressions;
 
 namespace GameJoltLibrary
 {
     public class GameJoltLibrarySettings : ObservableObject
     {
-        private bool importInstalledGames = true;
-        public bool ImportInstalledGames { get => importInstalledGames; set => SetValue(ref importInstalledGames, value); }
+        private bool _importInstalledGames = true;
+        private string _userName;
+
+        public bool ImportInstalledGames { get => _importInstalledGames; set => SetValue(ref _importInstalledGames, value); }
+
+        public string UserName { get => _userName; set => SetValue(ref _userName, value); }
     }
 
     public class GameJoltLibrarySettingsViewModel : ObservableObject, ISettings
@@ -64,6 +70,50 @@ namespace GameJoltLibrary
             // List of errors is presented to user if verification fails.
             errors = new List<string>();
             return true;
+        }
+
+        private RelayCommand authenticateCommand;
+        public ICommand AuthenticateCommand => authenticateCommand ??= new RelayCommand(Authenticate);
+
+        private void Authenticate()
+        {
+            using var webView = plugin.PlayniteApi.WebViews.CreateView(new WebViewSettings
+            {
+                JavaScriptEnabled = true,
+                WindowWidth = 490,
+                WindowHeight = 670
+            });
+
+            webView.DeleteDomainCookies(".gamejolt.com");
+            webView.DeleteDomainCookies("gamejolt.com");
+            webView.Navigate("https://gamejolt.com/login");
+
+            webView.LoadingChanged += (sender, args) =>
+            {
+                string address = webView.GetCurrentAddress();
+                _ = address.ToLower();
+                if (!args.IsLoading && Regex.IsMatch(address, @"https:\/\/gamejolt\.com\/?$"))
+                {
+                    webView.Close();
+                }
+            };
+
+            webView.OpenDialog();
+
+        }
+
+        private RelayCommand logoutCommand;
+        public ICommand LogoutCommand => logoutCommand ??= new RelayCommand(Logout);
+
+        private void Logout()
+        {
+            using var webView = plugin.PlayniteApi.WebViews.CreateOffscreenView(new WebViewSettings
+            {
+                JavaScriptEnabled = true
+            });
+
+            webView.DeleteDomainCookies(".gamejolt.com");
+            webView.DeleteDomainCookies("gamejolt.com");
         }
     }
 }

@@ -24,8 +24,10 @@ namespace GameJoltLibrary
         {
             _gameJoltLibrary = gameJoltLibrary;
             _logger = logger;
-            _retryPolicy = Policy.HandleResult<IElement>(e => e is null)
-                    .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(1));
+            _retryPolicy = Policy
+                .HandleResult<IElement>(e => e is null)
+                .Or<Exception>()
+                .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(1));
         }
 
         public override GameMetadata GetMetadata(Game game)
@@ -142,16 +144,15 @@ namespace GameJoltLibrary
             string pageSource = webView.GetPageSource();
             var document = context.OpenAsync(req => req.Content(pageSource).Address("https://gamejolt.com")).GetAwaiter().GetResult();
             var descriptionElement = document.QuerySelector(".game-description-content");
-
             if (descriptionElement is null && pageSource.Contains("game-maturity-block"))
             {
-                AcceptMaturityWarning(webView, storePage);
+                AcceptMaturityWarning(webView, storePage, _logger);
             }
 
             return descriptionElement;
         }
 
-        private void AcceptMaturityWarning(IWebView webView, string storePage)
+        public static void AcceptMaturityWarning(IWebView webView, string storePage, ILogger logger)
         {
             try
             {
@@ -159,7 +160,7 @@ namespace GameJoltLibrary
             }
             catch (Exception ex)
             {
-                _logger.Warn(ex, $"Could not accept maturity warning for game {storePage}");
+                logger.Warn(ex, $"Could not accept maturity warning for game {storePage}");
             }
         }
     }
