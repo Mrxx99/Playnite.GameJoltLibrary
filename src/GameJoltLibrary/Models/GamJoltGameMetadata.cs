@@ -43,7 +43,13 @@ namespace GameJoltLibrary.Models
         [SerializationPropertyName("developer")]
         public Developer Developer { get; set; }
 
-        public string Link => $"https://gamejolt.com/games/{Slug}/{Id}";
+        [SerializationPropertyName("category")]
+        public string Category { get; set; }
+
+        [SerializationPropertyName("description_content")]
+        public string DescriptionJson { get; set; }
+
+        public string StorePageLink => $"https://gamejolt.com/games/{Slug}/{Id}";
     }
 
     public partial class Compatibility
@@ -82,7 +88,7 @@ namespace GameJoltLibrary.Models
         public long Id { get; set; }
 
         [SerializationPropertyName("username")]
-        public string Username { get; set; }
+        public string UserName { get; set; }
 
         [SerializationPropertyName("name")]
         public string Name { get; set; }
@@ -95,6 +101,8 @@ namespace GameJoltLibrary.Models
 
         [SerializationPropertyName("img_avatar")]
         public Uri ImgAvatar { get; set; }
+
+        public string DeveloperLink => $"https://gamejolt.com/@{Slug}";
     }
 
     public class MediaItem

@@ -3,10 +3,10 @@ using Playnite.SDK.Data;
 
 namespace GameJoltLibrary.Models;
 
-internal class LibraryGamesResult
+internal class GameJoltWebResult<TPayload>
 {
     [SerializationPropertyName("payload")]
-    public LibraryGamesResultPayload Payload { get; set; }
+    public TPayload Payload { get; set; }
 }
 
 internal class LibraryGamesResultPayload
@@ -15,22 +15,8 @@ internal class LibraryGamesResultPayload
     public List<GameJoltGameMetadata> Games { get; set; }
 }
 
-internal class LibraryGameInfo
+internal class LibraryGameResultPayload
 {
-    [SerializationPropertyName("id")]
-    public long Id { get; set; }
-
-    [SerializationPropertyName("slug")]
-    public string Slug { get; set; }
-
-    [SerializationPropertyName("title")]
-    public string Title { get; set; }
-
-    [SerializationPropertyName("img_thumbnail")]
-    public string Image { get; set; }
-
-    [SerializationPropertyName("developer")]
-    public Developer Developer { get; set; }
-
-    public string Link => $"https://gamejolt.com/games/{Slug}/{Id}";
+    [SerializationPropertyName("game")]
+    public GameJoltGameMetadata Game { get; set; }
 }

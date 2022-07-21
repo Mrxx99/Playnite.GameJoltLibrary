@@ -24,16 +24,15 @@ public class LibraryGamesProvider
 
         try
         {
-            string ownedGamesUrl = $"https://gamejolt.com/@{userName}/owned";
+            string ownedGamesUrl = $"https://gamejolt.com/site-api/web/library/games/owned/@{userName}";
 
             var http = new HttpClient();
-            http.BaseAddress = new Uri("https://gamejolt.com/site-api/");
 
-            var result = http.GetAsync("web/library/games/owned/@mrxx99").GetAwaiter().GetResult();
+            var result = http.GetAsync(ownedGamesUrl).GetAwaiter().GetResult();
 
             var stringContent = result.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 
-            var ownedGames = Serialization.FromJsonStream<LibraryGamesResult>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
+            var ownedGames = Serialization.FromJsonStream<GameJoltWebResult<LibraryGamesResultPayload>>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
 
             var config = Configuration.Default.WithDefaultLoader();
             var context = BrowsingContext.New(config);
@@ -46,7 +45,7 @@ public class LibraryGamesProvider
                     Source = new MetadataNameProperty("Game Jolt"),
                     Name = ownedGame.Title,
                     IsInstalled = false,
-                    Links = new List<Link> { new Link("store page web", ownedGame.Link) },
+                    Links = new List<Link> { new Link("store page web", ownedGame.StorePageLink) },
                     Developers = new HashSet<MetadataProperty> { new MetadataNameProperty(ownedGame.Developer.DisplayName) }
                 };
 
