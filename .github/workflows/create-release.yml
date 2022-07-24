@@ -21,6 +21,7 @@ jobs:
 
     env:
       Solution_Path: src/GameJoltLibrary.sln
+      PlayniteToolbox_Project: ref/PlayniteRepo/source/Tools/Playnite.Toolbox/Playnite.Toolbox.csproj
       DOTNET_NOLOGO: true
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
 
@@ -45,13 +46,14 @@ jobs:
       - name: Build GameJoltLibrary
         run: dotnet build --no-restore --configuration Release $env:Solution_Path
         
+      - name: Restore dependencies Playnite
+        run: dotnet restore $env:PlayniteToolbox_Project
       - name: Build Playnite
-        run: |
-          ref/PlayniteRepo/build/build.ps1
+        run: dotnet build --no-restore --configuration Release $env:PlayniteToolbox_Project
           
       - name: pack GameJolLibrary
         run: |
-          ref/PlayniteRepo/build/Release/Toolbox.exe pack build/Release build/pack
+          ref/PlayniteRepo/source/Tools/Playnite.Toolbox/bin/x86/Release/Toolbox.exe pack build/Release build/pack
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
