@@ -43,13 +43,13 @@ namespace GameJoltLibrary
 
             if (GameJolt.IsInstalled && _settingsViewModel.Settings.ImportInstalledGames)
             {
-                var installedGames = InstalledGamesProvider.GetInstalledGamesV2(args).Values.ToList();
+                var installedGames = InstalledGamesProvider.GetInstalledGames(args.CancelToken);
                 games.AddRange(installedGames);
             }
 
             if (_settingsViewModel.Settings.ImportLibraryGames && _settingsViewModel.Settings.UserName is string userName)
             {
-                var libraryGames = LibraryGamesProvider.GetLibraryGames(userName);
+                var libraryGames = LibraryGamesProvider.GetLibraryGames(userName, args.CancelToken);
                 var libraryGamesToAdd = libraryGames.Where(game => !games.Any(game => game.GameId == game.GameId));
                 games.AddRange(libraryGames);
             }

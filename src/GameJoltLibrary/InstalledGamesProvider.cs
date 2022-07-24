@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using GameJoltLibrary.Models;
 using Playnite.SDK;
 using Playnite.SDK.Data;
 using Playnite.SDK.Models;
-using Playnite.SDK.Plugins;
 
 namespace GameJoltLibrary;
 
@@ -22,7 +22,7 @@ public class InstalledGamesProvider
         _logger = logger;
     }
 
-    public Dictionary<string, GameMetadata> GetInstalledGamesV2(LibraryGetGamesArgs args)
+    public IEnumerable<GameMetadata> GetInstalledGames(CancellationToken cancelToken)
     {
         var games = new Dictionary<string, GameMetadata>();
 
@@ -31,7 +31,7 @@ public class InstalledGamesProvider
 
         foreach (var gameInfo in installedGamesMetadata.Values)
         {
-            args.CancelToken.ThrowIfCancellationRequested();
+            cancelToken.ThrowIfCancellationRequested();
 
             var packagesForGame = gamePackagesInfo.Where(x => x.GameId == gameInfo.Id).ToList();
 
@@ -45,7 +45,8 @@ public class InstalledGamesProvider
                 CoverImage = new MetadataFile(gameInfo.ThumbnailMediaItem?.ImgUrl?.AbsoluteUri),
                 InstallDirectory = packagesForGame.FirstOrDefault()?.InstallDir,
                 GameActions = new List<GameAction>(),
-
+                Links = new List<Link> { new Link("Game Jolt Store Page", gameInfo.StorePageLink) },
+                Developers = new HashSet<MetadataProperty> { new MetadataNameProperty(gameInfo.Developer.DisplayName) }
             };
 
             foreach (var package in packagesForGame.Where(p => !string.IsNullOrEmpty(p.InstallDir)))
@@ -85,7 +86,7 @@ public class InstalledGamesProvider
             games.Add(gameMetaData.GameId, gameMetaData);
         }
 
-        return games;
+        return games.Values.ToList();
     }
 
     private LaunchOption GetFittingLaunchOption(InstalledGameInfo package)

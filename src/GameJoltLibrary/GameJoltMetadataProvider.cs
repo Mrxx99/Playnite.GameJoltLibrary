@@ -21,15 +21,19 @@ namespace GameJoltLibrary
     {
         private readonly GameJoltLibrary _gameJoltLibrary;
         private readonly ILogger _logger;
-        private readonly RetryPolicy<IElement> _retryPolicy;
-        private IReadOnlyDictionary<long, GameJoltGameMetadata> _onlineGamesMetadata;
+        private readonly RetryPolicy<IElement> _retryDescriptionPolicy;
+        private readonly RetryPolicy<GameJoltGameMetadata> _retryMetadataPolicy;
 
         public GameJoltMetadataProvider(GameJoltLibrary gameJoltLibrary, ILogger logger)
         {
             _gameJoltLibrary = gameJoltLibrary;
             _logger = logger;
-            _retryPolicy = Policy
+            _retryDescriptionPolicy = Policy
                 .HandleResult<IElement>(e => e is null)
+                .Or<Exception>()
+                .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(1));
+            _retryMetadataPolicy = Policy
+                .HandleResult<GameJoltGameMetadata>(e => e is null)
                 .Or<Exception>()
                 .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(1));
         }
@@ -53,24 +57,24 @@ namespace GameJoltLibrary
                 return metadata;
             }
 
-            // TODO why is Playnite in OfflineMode in Debug??
             // prefer reading meta data online because it contains more information
-            if (game.IsInstalled/* && _gameJoltLibrary.PlayniteApi.ApplicationInfo.InOfflineMode*/)
-            {
-                var installedGamesMetadata = InstalledGamesProvider.GetGamesMetadata(_logger);
-
-                if (installedGamesMetadata.TryGetValue(gameId, out var installedGameMetadata))
-                {
-                    ApplyMetadata(game, metadata, installedGameMetadata);
-                }
-            }
-            else
+            try
             {
                 var onlineGameMetadata = GetOnlineMetadata(game.GameId);
+                ApplyMetadata(game, metadata, onlineGameMetadata);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Could not get online metadata.");
 
-                if (onlineGameMetadata is not null)
+                if (game.IsInstalled)
                 {
-                    ApplyMetadata(game, metadata, onlineGameMetadata);
+                    var installedGamesMetadata = InstalledGamesProvider.GetGamesMetadata(_logger);
+
+                    if (installedGamesMetadata.TryGetValue(gameId, out var installedGameMetadata))
+                    {
+                        ApplyMetadata(game, metadata, installedGameMetadata);
+                    }
                 }
             }
 
@@ -109,10 +113,7 @@ namespace GameJoltLibrary
             }
 
             // Description
-            if (!_gameJoltLibrary.PlayniteApi.ApplicationInfo.InOfflineMode)
-            {
-                metadata.Description = GetDescription(game.Name, gameJoltMetadata.StorePageLink);
-            }
+            metadata.Description = GetDescription(game.Name, gameJoltMetadata.StorePageLink);
 
             metadata.Links.Add(new Link("Game Jolt Store Page", gameJoltMetadata.StorePageLink));
         }
@@ -122,26 +123,16 @@ namespace GameJoltLibrary
         {
             string gameDiscoverUrl = $"https://gamejolt.com/site-api/web/discover/games/{gameId}";
 
-            var http = new HttpClient();
-            var result = http.GetAsync(gameDiscoverUrl).GetAwaiter().GetResult();
+            var metaData = _retryMetadataPolicy.Execute(() =>
+            {
+                using var http = new HttpClient();
+                var result = http.GetAsync(gameDiscoverUrl).GetAwaiter().GetResult();
 
-            var metaData = Serialization.FromJsonStream<GameJoltWebResult<LibraryGameResultPayload>>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
+                var resultObj = Serialization.FromJsonStream<GameJoltWebResult<LibraryGameResultPayload>>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
+                return resultObj.Payload.Game;
+            });
 
-            return metaData.Payload.Game;
-        }
-
-        private IReadOnlyDictionary<long, GameJoltGameMetadata> GetOnlineMetadata()
-        {
-            var http = new HttpClient();
-            http.BaseAddress = new Uri("https://gamejolt.com/site-api/");
-
-            string userName = _gameJoltLibrary.LoadPluginSettings<GameJoltLibrarySettings>().UserName;
-
-            var result = http.GetAsync($"web/library/games/owned/@{userName}").GetAwaiter().GetResult();
-
-            var ownedGames = Serialization.FromJsonStream<GameJoltWebResult<LibraryGamesResultPayload>>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
-
-            return ownedGames.Payload.Games.ToDictionary(kv => kv.Id);
+            return metaData;
         }
 
         public string GetDescription(string gameName, string storePage, IBrowsingContext browsingContext)
@@ -153,7 +144,7 @@ namespace GameJoltLibrary
                 using (var webView = _gameJoltLibrary.PlayniteApi.WebViews.CreateOffscreenView(new WebViewSettings { JavaScriptEnabled = true }))
                 {
                     webView.NavigateAndWait(storePage);
-                    descriptionElement = _retryPolicy.Execute(() => GetDescriptionFromWebView(storePage, browsingContext, webView));
+                    descriptionElement = _retryDescriptionPolicy.Execute(() => GetDescriptionFromWebView(storePage, browsingContext, webView));
                 }
 
                 if (descriptionElement is null)
