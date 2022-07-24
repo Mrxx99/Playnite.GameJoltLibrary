@@ -43,6 +43,7 @@ namespace GameJoltLibrary
                 Genres = new HashSet<MetadataProperty>(),
                 Features = new HashSet<MetadataProperty>(),
                 Developers = new HashSet<MetadataProperty>(),
+                Categories = new HashSet<MetadataProperty>(),
             };
 
             bool isIdParsable = int.TryParse(game.GameId, NumberStyles.Integer, CultureInfo.InvariantCulture, out int gameId);
@@ -52,7 +53,9 @@ namespace GameJoltLibrary
                 return metadata;
             }
 
-            if (game.IsInstalled)
+            // TODO why is Playnite in OfflineMode in Debug??
+            // prefer reading meta data online because it contains more information
+            if (game.IsInstalled/* && _gameJoltLibrary.PlayniteApi.ApplicationInfo.InOfflineMode*/)
             {
                 var installedGamesMetadata = InstalledGamesProvider.GetGamesMetadata(_logger);
 
@@ -63,9 +66,9 @@ namespace GameJoltLibrary
             }
             else
             {
-                _onlineGamesMetadata ??= GetOnlineMetadata();
+                var onlineGameMetadata = GetOnlineMetadata(game.GameId);
 
-                if (_onlineGamesMetadata.TryGetValue(gameId, out var onlineGameMetadata))
+                if (onlineGameMetadata is not null)
                 {
                     ApplyMetadata(game, metadata, onlineGameMetadata);
                 }
@@ -96,14 +99,35 @@ namespace GameJoltLibrary
             if (!string.IsNullOrEmpty(gameJoltMetadata.Developer?.DisplayName))
             {
                 metadata.Developers.Add(new MetadataNameProperty(gameJoltMetadata.Developer.DisplayName));
+                metadata.Links.Add(new Link("Game Jolt Developer Page", gameJoltMetadata.Developer.DeveloperLink));
             }
 
-            string storePage = $"https://gamejolt.com/games/{gameJoltMetadata.Slug}/{gameJoltMetadata.Id}";
+            // Category
+            if (!string.IsNullOrEmpty(gameJoltMetadata.Category))
+            {
+                metadata.Genres.Add(new MetadataNameProperty(gameJoltMetadata.Category));
+            }
 
             // Description
-            metadata.Description = GetDescription(game.Name, storePage);
+            if (!_gameJoltLibrary.PlayniteApi.ApplicationInfo.InOfflineMode)
+            {
+                metadata.Description = GetDescription(game.Name, gameJoltMetadata.StorePageLink);
+            }
 
-            metadata.Links.Add(new Link("Game Jolt Store Page", storePage));
+            metadata.Links.Add(new Link("Game Jolt Store Page", gameJoltMetadata.StorePageLink));
+        }
+
+
+        private GameJoltGameMetadata GetOnlineMetadata(string gameId)
+        {
+            string gameDiscoverUrl = $"https://gamejolt.com/site-api/web/discover/games/{gameId}";
+
+            var http = new HttpClient();
+            var result = http.GetAsync(gameDiscoverUrl).GetAwaiter().GetResult();
+
+            var metaData = Serialization.FromJsonStream<GameJoltWebResult<LibraryGameResultPayload>>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
+
+            return metaData.Payload.Game;
         }
 
         private IReadOnlyDictionary<long, GameJoltGameMetadata> GetOnlineMetadata()
@@ -111,11 +135,11 @@ namespace GameJoltLibrary
             var http = new HttpClient();
             http.BaseAddress = new Uri("https://gamejolt.com/site-api/");
 
-            var result = http.GetAsync("web/library/games/owned/@mrxx99").GetAwaiter().GetResult();
+            string userName = _gameJoltLibrary.LoadPluginSettings<GameJoltLibrarySettings>().UserName;
 
-            var stringContent = result.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            var result = http.GetAsync($"web/library/games/owned/@{userName}").GetAwaiter().GetResult();
 
-            var ownedGames = Serialization.FromJsonStream<LibraryGamesResult>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
+            var ownedGames = Serialization.FromJsonStream<GameJoltWebResult<LibraryGamesResultPayload>>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
 
             return ownedGames.Payload.Games.ToDictionary(kv => kv.Id);
         }
