@@ -3,7 +3,7 @@
     "GameJoltLibrary": {
       "commandName": "Executable",
       "executablePath": ".\\Playnite.DesktopApp.exe",
-      "workingDirectory": "..\\..\\ref\\PlayniteRepo\\source\\Playnite.DesktopApp\\bin\\Debug"
+      "workingDirectory": "..\\..\\ref\\PlayniteRepo\\build\\Debug"
     }
   }
 }
