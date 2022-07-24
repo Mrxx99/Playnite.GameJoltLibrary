@@ -11,11 +11,11 @@ namespace GameJoltLibrary
     public class GameJoltLibrary : LibraryPlugin
     {
         private static readonly ILogger _logger = LogManager.GetLogger();
+        private readonly GameJoltLibrarySettingsViewModel _settingsViewModel;
+
         public InstalledGamesProvider InstalledGamesProvider { get; }
         public LibraryGamesProvider LibraryGamesProvider { get; }
         public GameJoltMetadataProvider MetadataProvider { get; }
-
-        private GameJoltLibrarySettingsViewModel settingsViewModel { get; set; }
 
         public override Guid Id { get; } = Guid.Parse("555d58fd-a000-401b-972c-9230bed81aed");
 
@@ -26,7 +26,7 @@ namespace GameJoltLibrary
 
         public GameJoltLibrary(IPlayniteAPI api) : base(api)
         {
-            settingsViewModel = new GameJoltLibrarySettingsViewModel(this);
+            _settingsViewModel = new GameJoltLibrarySettingsViewModel(this);
             Properties = new LibraryPluginProperties
             {
                 HasSettings = true
@@ -39,14 +39,15 @@ namespace GameJoltLibrary
 
         public override IEnumerable<GameMetadata> GetGames(LibraryGetGamesArgs args)
         {
-            if (!GameJolt.IsInstalled || !settingsViewModel.Settings.ImportInstalledGames)
+            var games = new List<GameMetadata>();
+
+            if (GameJolt.IsInstalled && _settingsViewModel.Settings.ImportInstalledGames)
             {
-                return Array.Empty<GameMetadata>();
+                var installedGames = InstalledGamesProvider.GetInstalledGamesV2(args).Values.ToList();
+                games.AddRange(installedGames);
             }
 
-            var games = InstalledGamesProvider.GetInstalledGamesV2(args).Values.ToList();
-
-            if (settingsViewModel.Settings.UserName is string userName)
+            if (_settingsViewModel.Settings.ImportLibraryGames && _settingsViewModel.Settings.UserName is string userName)
             {
                 var libraryGames = LibraryGamesProvider.GetLibraryGames(userName);
                 var libraryGamesToAdd = libraryGames.Where(game => !games.Any(game => game.GameId == game.GameId));
@@ -65,7 +66,7 @@ namespace GameJoltLibrary
 
         public override ISettings GetSettings(bool firstRunSettings)
         {
-            return settingsViewModel;
+            return _settingsViewModel;
         }
 
         public override UserControl GetSettingsView(bool firstRunSettings)

@@ -54,7 +54,7 @@ namespace GameJoltLibrary
             }
 
             // TODO why is Playnite in OfflineMode in Debug??
-            // prever reading metadata online because it contains more information
+            // prefer reading meta data online because it contains more information
             if (game.IsInstalled/* && _gameJoltLibrary.PlayniteApi.ApplicationInfo.InOfflineMode*/)
             {
                 var installedGamesMetadata = InstalledGamesProvider.GetGamesMetadata(_logger);
