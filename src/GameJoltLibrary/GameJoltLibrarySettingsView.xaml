@@ -13,8 +13,6 @@
                   IsChecked="{Binding Settings.ImportInstalledGames}"
                   Content="Import installed games"
                   d:Content="Import installed games"/>
-        <Button Content="Authenticate" Command="{Binding AuthenticateCommand}" />
         <TextBox Text="{Binding Settings.UserName}"/>
-        <Button Content="Logout" Command="{Binding LogoutCommand}"/>
     </StackPanel>
 </UserControl>
