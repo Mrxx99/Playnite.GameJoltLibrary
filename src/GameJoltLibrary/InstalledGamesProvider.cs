@@ -13,8 +13,8 @@ namespace GameJoltLibrary;
 
 public class InstalledGamesProvider
 {
-    private static string _localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    private static string _gameJoltUserDataPath = Path.Combine(_localAppDataPath, "game-jolt-client", "User Data", "Default");
+    private static readonly string _localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    private static readonly string _gameJoltUserDataPath = Path.Combine(_localAppDataPath, "game-jolt-client", "User Data", "Default");
     private readonly ILogger _logger;
 
     public InstalledGamesProvider(ILogger logger)

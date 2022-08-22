@@ -17,6 +17,8 @@ namespace GameJoltLibrary
         public LibraryGamesProvider LibraryGamesProvider { get; }
         public GameJoltMetadataProvider MetadataProvider { get; }
 
+        public string ImportErrorMessageId { get; } = "GameJolt_libImportError";
+
         public override Guid Id { get; } = Guid.Parse("555d58fd-a000-401b-972c-9230bed81aed");
 
         public override string Name => "Game Jolt";
@@ -40,18 +42,67 @@ namespace GameJoltLibrary
         public override IEnumerable<GameMetadata> GetGames(LibraryGetGamesArgs args)
         {
             var games = new List<GameMetadata>();
+            Exception importError = null;
 
-            if (GameJolt.IsInstalled && _settingsViewModel.Settings.ImportInstalledGames)
+            var installedGames = Array.Empty<GameMetadata>();
+
+            if (_settingsViewModel.Settings.ImportInstalledGames)
             {
-                var installedGames = InstalledGamesProvider.GetInstalledGames(args.CancelToken);
-                games.AddRange(installedGames);
+                try
+                {
+                    installedGames = InstalledGamesProvider.GetInstalledGames(args.CancelToken).ToArray();
+                    _logger.Debug($"Found {installedGames.Length} installed Game Jolt games.");
+                    games.AddRange(installedGames);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Failed to import installed Game Jolt games.");
+                    importError = ex;
+                }
+            }
+
+            // Update uninstalled games
+            using (PlayniteApi.Database.BufferedUpdate())
+            {
+                // Any collection changes here don't generate any events
+
+                var existingGamesMarkedAsInstalled = PlayniteApi.Database.Games.Where(game => game.PluginId == Id && game.IsInstalled);
+                var uninstalledGames = existingGamesMarkedAsInstalled.Where(game => !installedGames.Any(i => i.GameId == game.GameId));
+                foreach (var uninstalledGame in uninstalledGames)
+                {
+                    uninstalledGame.IsInstalled = false;
+                    PlayniteApi.Database.Games.Update(uninstalledGame);
+                }
             }
 
             if (_settingsViewModel.Settings.ImportLibraryGames && _settingsViewModel.Settings.UserName is string userName)
             {
-                var libraryGames = LibraryGamesProvider.GetLibraryGames(userName, args.CancelToken);
-                var libraryGamesToAdd = libraryGames.Where(game => !games.Any(game => game.GameId == game.GameId));
-                games.AddRange(libraryGames);
+                try
+                {
+                    var libraryGames = LibraryGamesProvider.GetLibraryGames(userName, args.CancelToken);
+                    var libraryGamesToAdd = libraryGames.Where(libraryGame => !games.Any(game => game.GameId == libraryGame.GameId)).ToArray();
+                    _logger.Debug(message: $"Found {libraryGamesToAdd.Length} library Game Jolt games.");
+                    games.AddRange(libraryGames);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Failed to import library Game Jolt games.");
+                    importError = ex;
+                }
+            }
+
+            if (importError is not null)
+            {
+                PlayniteApi.Notifications.Add(new NotificationMessage(
+                    ImportErrorMessageId,
+                    string.Format(PlayniteApi.Resources.GetString("LOCLibraryImportError"), Name) +
+                    Environment.NewLine + importError.Message,
+                    NotificationType.Error,
+                    () => OpenSettingsView()));
+            }
+            else
+            {
+                PlayniteApi.Notifications.Remove(ImportErrorMessageId);
             }
 
             return games;
