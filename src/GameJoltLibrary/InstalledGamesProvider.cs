@@ -77,10 +77,7 @@ public class InstalledGamesProvider
 
             if (gameMetaData.GameActions.FirstOrDefault() is GameAction primaryGameAction)
             {
-                using var icon = Icon.ExtractAssociatedIcon(primaryGameAction.Path);
-                using var image = icon.ToBitmap();
-                var iconBytes = ImageToByte(image);
-                gameMetaData.Icon = new MetadataFile("icon", iconBytes);
+                gameMetaData.Icon = new MetadataFile(primaryGameAction.Path);
             }
 
             games.Add(gameMetaData.GameId, gameMetaData);
@@ -138,15 +135,6 @@ public class InstalledGamesProvider
         }
 
         return null;
-    }
-
-    public static byte[] ImageToByte(Bitmap image)
-    {
-        //ImageConverter converter = new ImageConverter();
-        //return (byte[])converter.ConvertTo(image, typeof(byte[]));
-        using MemoryStream ms = new MemoryStream();
-        image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-        return ms.ToArray();
     }
 
     public static IReadOnlyDictionary<long, GameJoltGameMetadata> GetGamesMetadata(ILogger logger)

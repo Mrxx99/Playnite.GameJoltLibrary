@@ -36,7 +36,7 @@ namespace GameJoltLibrary
             _logger.Info("GemeJolt library initialized.");
             InstalledGamesProvider = new InstalledGamesProvider(_logger);
             LibraryGamesProvider = new LibraryGamesProvider(_logger);
-            MetadataProvider = new GameJoltMetadataProvider(this, _logger);
+            MetadataProvider = new GameJoltMetadataProvider(api, _logger);
         }
 
         public override IEnumerable<GameMetadata> GetGames(LibraryGetGamesArgs args)

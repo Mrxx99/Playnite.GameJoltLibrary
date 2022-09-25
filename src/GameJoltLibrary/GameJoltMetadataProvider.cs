@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Web;
+using System.Xml.Linq;
 using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Dom.Html;
@@ -19,14 +20,16 @@ namespace GameJoltLibrary
 {
     public class GameJoltMetadataProvider : LibraryMetadataProvider
     {
-        private readonly GameJoltLibrary _gameJoltLibrary;
+        private readonly IPlayniteAPI _playniteAPI;
         private readonly ILogger _logger;
         private readonly RetryPolicy<IElement> _retryDescriptionPolicy;
         private readonly RetryPolicy<GameJoltGameMetadata> _retryMetadataPolicy;
 
-        public GameJoltMetadataProvider(GameJoltLibrary gameJoltLibrary, ILogger logger)
+        public string GetMetadataErrorMessageId { get; } = "GameJolt_libImportError";
+
+        public GameJoltMetadataProvider(IPlayniteAPI playniteAPI, ILogger logger)
         {
-            _gameJoltLibrary = gameJoltLibrary;
+            _playniteAPI = playniteAPI;
             _logger = logger;
             _retryDescriptionPolicy = Policy
                 .HandleResult<IElement>(e => e is null)
@@ -57,6 +60,13 @@ namespace GameJoltLibrary
                 return metadata;
             }
 
+            GetMetadata(game, metadata, gameId);
+
+            return metadata;
+        }
+
+        private void GetMetadata(Game game, GameMetadata metadata, int gameId)
+        {
             // prefer reading meta data online because it contains more information
             try
             {
@@ -77,8 +87,6 @@ namespace GameJoltLibrary
                     }
                 }
             }
-
-            return metadata;
         }
 
         private void ApplyMetadata(Game game, GameMetadata metadata, GameJoltGameMetadata gameJoltMetadata)
@@ -141,7 +149,7 @@ namespace GameJoltLibrary
             {
                 IElement descriptionElement = null;
 
-                using (var webView = _gameJoltLibrary.PlayniteApi.WebViews.CreateOffscreenView(new WebViewSettings { JavaScriptEnabled = true }))
+                using (var webView = _playniteAPI.WebViews.CreateOffscreenView(new WebViewSettings { JavaScriptEnabled = true }))
                 {
                     webView.NavigateAndWait(storePage);
                     descriptionElement = _retryDescriptionPolicy.Execute(() => GetDescriptionFromWebView(storePage, browsingContext, webView));
