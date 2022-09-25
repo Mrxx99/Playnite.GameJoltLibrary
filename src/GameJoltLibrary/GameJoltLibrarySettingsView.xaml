@@ -13,13 +13,13 @@
         <CheckBox DockPanel.Dock="Top" Name="CheckGameJoltImportInstalled"
                   Margin="0,0,0,15"
                   IsChecked="{Binding Settings.ImportInstalledGames}"
-                  Content="{DynamicResource LOCImportInstalledGames}"
+                  Content="{DynamicResource LOCGameJoltImportInstalledGames}"
                   d:Content="Import installed games"/>
 
         <CheckBox DockPanel.Dock="Top" Name="CheckGameJoltImportLibraryGames"
                   Margin="0,0,0,15"
                   IsChecked="{Binding Settings.ImportLibraryGames}"
-                  Content="{DynamicResource LOCImportLibraryGames}"
+                  Content="{DynamicResource LOCGameJoltImportLibraryGames}"
                   d:Content="Import library games"/>
         <Label Content="{DynamicResource LOCGameJoltUserName}"
                d:Content="Game Jolt user name:"
