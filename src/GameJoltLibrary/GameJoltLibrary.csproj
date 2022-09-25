@@ -37,6 +37,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Page Remove="Localization\*.xaml" />
+    <None Include="Localization\*.xaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AngleSharp" Version="0.9.9" />
     <PackageReference Include="PlayniteSDK" Version="6.4.0" />
     <PackageReference Include="Polly" Version="5.1.0" />
@@ -54,6 +61,13 @@
     <None Update="Resources\GameJoltIcon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="Localization\de_DE.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 
 </Project>
