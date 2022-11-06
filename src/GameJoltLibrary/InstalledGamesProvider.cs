@@ -15,10 +15,12 @@ public class InstalledGamesProvider
 {
     private static readonly string _localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
     private static readonly string _gameJoltUserDataPath = Path.Combine(_localAppDataPath, "game-jolt-client", "User Data", "Default");
+    private readonly IPlayniteAPI _playniteAPI;
     private readonly ILogger _logger;
 
-    public InstalledGamesProvider(ILogger logger)
+    public InstalledGamesProvider(IPlayniteAPI playniteAPI, ILogger logger)
     {
+        _playniteAPI = playniteAPI;
         _logger = logger;
     }
 
@@ -84,6 +86,22 @@ public class InstalledGamesProvider
         }
 
         return games.Values.ToList();
+    }
+
+    public void UpdatedUninstalledGames(GameMetadata[] installedGames)
+    {
+        using (_playniteAPI.Database.BufferedUpdate())
+        {
+            // Any collection changes here don't generate any events
+
+            var existingGamesMarkedAsInstalled = _playniteAPI.Database.Games.Where(game => game.PluginId == GameJoltLibrary.PluginId && game.IsInstalled);
+            var uninstalledGames = existingGamesMarkedAsInstalled.Where(game => !installedGames.Any(i => i.GameId == game.GameId));
+            foreach (var uninstalledGame in uninstalledGames)
+            {
+                uninstalledGame.IsInstalled = false;
+                _playniteAPI.Database.Games.Update(uninstalledGame);
+            }
+        }
     }
 
     private LaunchOption GetFittingLaunchOption(InstalledGameInfo package)

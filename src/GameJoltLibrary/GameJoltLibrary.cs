@@ -19,7 +19,9 @@ namespace GameJoltLibrary
 
         public string ImportErrorMessageId { get; } = "GameJolt_libImportError";
 
-        public override Guid Id { get; } = Guid.Parse("555d58fd-a000-401b-972c-9230bed81aed");
+        public static Guid PluginId { get; set; } = Guid.Parse("555d58fd-a000-401b-972c-9230bed81aed");
+
+        public override Guid Id { get; } = PluginId;
 
         public override string Name => "Game Jolt";
 
@@ -34,7 +36,7 @@ namespace GameJoltLibrary
                 HasSettings = true
             };
             _logger.Info("GemeJolt library initialized.");
-            InstalledGamesProvider = new InstalledGamesProvider(_logger);
+            InstalledGamesProvider = new InstalledGamesProvider(api, _logger);
             LibraryGamesProvider = new LibraryGamesProvider(_logger);
             MetadataProvider = new GameJoltMetadataProvider(api, _logger);
         }
@@ -46,33 +48,27 @@ namespace GameJoltLibrary
 
             var installedGames = Array.Empty<GameMetadata>();
 
-            if (_settingsViewModel.Settings.ImportInstalledGames)
+            try
             {
-                try
+                installedGames = InstalledGamesProvider.GetInstalledGames(args.CancelToken).ToArray();
+
+                if (_settingsViewModel.Settings.ImportInstalledGames)
                 {
-                    installedGames = InstalledGamesProvider.GetInstalledGames(args.CancelToken).ToArray();
                     _logger.Debug($"Found {installedGames.Length} installed Game Jolt games.");
                     games.AddRange(installedGames);
                 }
-                catch (Exception ex)
-                {
-                    _logger.Error(ex, "Failed to import installed Game Jolt games.");
-                    importError = ex;
-                }
+
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to import installed Game Jolt games.");
+                importError = ex;
             }
 
-            // Update uninstalled games
-            using (PlayniteApi.Database.BufferedUpdate())
+            // Skip update of uninstalled games if error on import
+            if (importError is null)
             {
-                // Any collection changes here don't generate any events
-
-                var existingGamesMarkedAsInstalled = PlayniteApi.Database.Games.Where(game => game.PluginId == Id && game.IsInstalled);
-                var uninstalledGames = existingGamesMarkedAsInstalled.Where(game => !installedGames.Any(i => i.GameId == game.GameId));
-                foreach (var uninstalledGame in uninstalledGames)
-                {
-                    uninstalledGame.IsInstalled = false;
-                    PlayniteApi.Database.Games.Update(uninstalledGame);
-                }
+                InstalledGamesProvider.UpdatedUninstalledGames(installedGames);
             }
 
             if (_settingsViewModel.Settings.ImportLibraryGames && _settingsViewModel.Settings.UserName is string userName)
