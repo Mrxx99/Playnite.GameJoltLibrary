@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Controls;
+using GameJoltLibrary.Exceptions;
 using Playnite.SDK;
 using Playnite.SDK.Models;
 using Playnite.SDK.Plugins;
@@ -18,6 +19,7 @@ namespace GameJoltLibrary
         public GameJoltMetadataProvider MetadataProvider { get; }
 
         public string ImportErrorMessageId { get; } = "GameJolt_libImportError";
+        public string UserNotFoundErrorMessageId { get; } = "GameJolt_UserNotFoundError";
 
         public static Guid PluginId { get; set; } = Guid.Parse("555d58fd-a000-401b-972c-9230bed81aed");
 
@@ -37,7 +39,7 @@ namespace GameJoltLibrary
             };
             _logger.Info("GemeJolt library initialized.");
             InstalledGamesProvider = new InstalledGamesProvider(api, _logger);
-            LibraryGamesProvider = new LibraryGamesProvider(_logger);
+            LibraryGamesProvider = new LibraryGamesProvider(api, _logger);
             MetadataProvider = new GameJoltMetadataProvider(api, _logger);
         }
 
@@ -79,12 +81,28 @@ namespace GameJoltLibrary
                     var libraryGamesToAdd = libraryGames.Where(libraryGame => !games.Any(game => game.GameId == libraryGame.GameId)).ToArray();
                     _logger.Debug(message: $"Found {libraryGamesToAdd.Length} library Game Jolt games.");
                     games.AddRange(libraryGames);
+                    LibraryGamesProvider.UpdateRemovedLibraryGames(libraryGames);
+                }
+                catch (UserNotFoundException ex)
+                {
+                    _logger.Error(ex, $"User {userName} not found.");
+                    LibraryGamesProvider.RemoveLibraryGames();
+                    PlayniteApi.Notifications.Add(new NotificationMessage(
+                        UserNotFoundErrorMessageId,
+                        string.Format(PlayniteApi.Resources.GetString("LOCLibraryImportError"), Name) + Environment.NewLine +
+                        string.Format(PlayniteApi.Resources.GetString("LOCGameJoltUserNotFoundError"), userName),
+                        NotificationType.Error,
+                        () => OpenSettingsView()));
                 }
                 catch (Exception ex)
                 {
                     _logger.Error(ex, "Failed to import library Game Jolt games.");
                     importError = ex;
                 }
+            }
+            else
+            {
+                LibraryGamesProvider.RemoveLibraryGames();
             }
 
             if (importError is not null)

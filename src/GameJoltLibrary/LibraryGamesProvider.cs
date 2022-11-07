@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
+using GameJoltLibrary.Exceptions;
 using GameJoltLibrary.Models;
 using Playnite.SDK;
 using Playnite.SDK.Data;
@@ -13,15 +15,17 @@ namespace GameJoltLibrary;
 
 public class LibraryGamesProvider
 {
+    private readonly IPlayniteAPI _playniteAPI;
     private readonly ILogger _logger;
     private readonly RetryPolicy<List<GameJoltGameMetadata>> _retryOwnedGamesPolicy;
 
-    public LibraryGamesProvider(ILogger logger)
+    public LibraryGamesProvider(IPlayniteAPI playniteAPI, ILogger logger)
     {
+        _playniteAPI = playniteAPI;
         _logger = logger;
         _retryOwnedGamesPolicy = Policy
             .HandleResult<List<GameJoltGameMetadata>>(e => e is null)
-            .Or<Exception>()
+            .Or<Exception>(ex => ex is not UserNotFoundException)
             .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(1));
     }
 
@@ -38,6 +42,11 @@ public class LibraryGamesProvider
                 var http = new HttpClient();
 
                 var result = http.GetAsync(ownedGamesUrl, cancelToken).GetAwaiter().GetResult();
+
+                if (result.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    throw new UserNotFoundException();
+                }
 
                 var stringContent = result.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 
@@ -65,8 +74,41 @@ public class LibraryGamesProvider
         catch (Exception ex)
         {
             _logger.Error(ex, "Error during loading library games for Game Jolt");
+            throw;
         }
 
         return games;
+    }
+
+    public void RemoveLibraryGames()
+    {
+        using (_playniteAPI.Database.BufferedUpdate())
+        {
+            // Any collection changes here don't generate any events
+
+            var libraryGames = _playniteAPI.Database.Games.Where(game => game.PluginId == GameJoltLibrary.PluginId && !game.IsInstalled);
+            foreach (var libraryGame in libraryGames)
+            {
+                _playniteAPI.Database.Games.Remove(libraryGame);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Removes games that are not anymore owned games, also takes care if user changed
+    /// </summary>
+    public void UpdateRemovedLibraryGames(IEnumerable<GameMetadata> ownedLibraryGames)
+    {
+        using (_playniteAPI.Database.BufferedUpdate())
+        {
+            // Any collection changes here don't generate any events
+
+            var currentLibraryGames = _playniteAPI.Database.Games.Where(game => game.PluginId == GameJoltLibrary.PluginId && !game.IsInstalled);
+            var gamesToRemove = currentLibraryGames.Where(game => !ownedLibraryGames.Any(i => i.GameId == game.GameId));
+            foreach (var libraryGame in gamesToRemove)
+            {
+                _playniteAPI.Database.Games.Remove(libraryGame);
+            }
+        }
     }
 }

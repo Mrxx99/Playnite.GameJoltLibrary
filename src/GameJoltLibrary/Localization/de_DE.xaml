@@ -3,4 +3,5 @@
     <system:String x:Key="LOCGameJoltImportInstalledGames">_Installierte Spiele importieren</system:String>
     <system:String x:Key="LOCGameJoltImportLibraryGames">_Nicht installierte Spiele importieren (nur gekaufte)</system:String>
     <system:String x:Key="LOCGameJoltUserName">Game Jolt _Benutzername:</system:String>
+    <system:String x:Key="LOCGameJoltUserNotFoundError">Game Jolt Benutzer '{0}' konnte nicht gefunden werden.</system:String>
 </ResourceDictionary>
