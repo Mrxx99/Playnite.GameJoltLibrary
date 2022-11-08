@@ -2,7 +2,7 @@
 
 # GameJoltLibrary
 
-This provide integration of your [Game Jolt](https://gamejolt.com/) games into [Playnite](https://playnite.link/).
+This provides integration of your [Game Jolt](https://gamejolt.com/) games into [Playnite](https://playnite.link/).
 
 Find on addons database: [Game Jolt Library](https://playnite.link/addons.html#GameJoltLibrary_555d58fd-a000-401b-972c-9230bed81aed)
 
