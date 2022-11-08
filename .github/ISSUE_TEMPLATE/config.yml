@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💡 Idea
+    url: https://github.com/Mrxx99/Playnite.GameJoltLibrary/discussions/new?category=ideas
+    about: Have an idea, create it here.
+  - name: 🗨 Discussions
+    url: https://github.com/Tyrrrz/YoutubeDownloader/discussions/new
+    about: Ask and answer questions.
