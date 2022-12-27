@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net462</TargetFramework>
     <Version>1.0</Version>
-    <LangVersion>10.0</LangVersion>
+    <LangVersion>latest</LangVersion>
     <UseWPF>true</UseWPF>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>..\..\build\$(Configuration)</OutputPath>
@@ -48,6 +48,10 @@
     <PackageReference Include="AngleSharp" Version="0.9.9" />
     <PackageReference Include="PlayniteSDK" Version="6.5.0" />
     <PackageReference Include="Polly" Version="5.1.0" />
+    <PackageReference Include="PolySharp" Version="1.8.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
