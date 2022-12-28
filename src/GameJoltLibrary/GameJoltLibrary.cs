@@ -70,7 +70,7 @@ namespace GameJoltLibrary
             // Skip update of uninstalled games if error on import
             if (importError is null)
             {
-                InstalledGamesProvider.UpdatedUninstalledGames(installedGames);
+                InstalledGamesProvider.UpdatedInstalledGames(installedGames);
             }
 
             if (_settingsViewModel.Settings.ImportLibraryGames && _settingsViewModel.Settings.UserName is string userName)
@@ -120,6 +120,20 @@ namespace GameJoltLibrary
             }
 
             return games;
+        }
+
+        public override IEnumerable<PlayController> GetPlayActions(GetPlayActionsArgs args)
+        {
+            if (args.Game.PluginId != PluginId)
+            {
+                return Array.Empty<PlayController>();
+            }
+
+            var playActions = InstalledGamesProvider.GetPlayActions(args);
+
+            _logger.Info($"Found {playActions.Count} play actions for game {args.Game.Name}");
+
+            return playActions;
         }
 
         public override string LibraryIcon => GameJolt.Icon;

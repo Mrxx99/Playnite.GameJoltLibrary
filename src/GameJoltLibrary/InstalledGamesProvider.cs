@@ -7,6 +7,7 @@ using GameJoltLibrary.Models;
 using Playnite.SDK;
 using Playnite.SDK.Data;
 using Playnite.SDK.Models;
+using Playnite.SDK.Plugins;
 
 namespace GameJoltLibrary;
 
@@ -50,35 +51,11 @@ public class InstalledGamesProvider
                 Developers = new HashSet<MetadataProperty> { new MetadataNameProperty(gameInfo.Developer.DisplayName) }
             };
 
-            foreach (var package in packagesForGame.Where(p => !string.IsNullOrEmpty(p.InstallDir)))
+            var primaryPlayAction = GetExecutablePackages(packagesForGame).FirstOrDefault();
+
+            if (primaryPlayAction is not null)
             {
-                var launchOption = GetFittingLaunchOption(package);
-
-                if (launchOption != null)
-                {
-                    string relativeGameIExecutablePath = launchOption.ExecutablePath;
-                    string gameExecutablePath = Path.Combine(package.InstallDir, "data", relativeGameIExecutablePath);
-
-                    if (File.Exists(gameExecutablePath))
-                    {
-                        gameMetaData.GameActions.Add(new GameAction
-                        {
-                            IsPlayAction = true,
-                            Type = GameActionType.File,
-                            Path = gameExecutablePath,
-                            Name = package.Title
-                        });
-                    }
-                    else
-                    {
-                        _logger.Warn($"game executable does not exist ({gameExecutablePath})");
-                    }
-                }
-            }
-
-            if (gameMetaData.GameActions.FirstOrDefault() is GameAction primaryGameAction)
-            {
-                gameMetaData.Icon = new MetadataFile(primaryGameAction.Path);
+                gameMetaData.Icon = new MetadataFile(primaryPlayAction.ExecutablePath);
             }
 
             games.Add(gameMetaData.GameId, gameMetaData);
@@ -87,18 +64,86 @@ public class InstalledGamesProvider
         return games.Values.ToList();
     }
 
-    public void UpdatedUninstalledGames(GameMetadata[] installedGames)
+    public void UpdatedInstalledGames(GameMetadata[] installedGames)
     {
         using (_playniteAPI.Database.BufferedUpdate())
         {
             // Any collection changes here don't generate any events
 
-            var existingGamesMarkedAsInstalled = _playniteAPI.Database.Games.Where(game => game.PluginId == GameJoltLibrary.PluginId && game.IsInstalled);
+            var existingGamesMarkedAsInstalled = _playniteAPI.Database.Games.Where(game => game.PluginId == GameJoltLibrary.PluginId && game.IsInstalled).ToArray();
             var uninstalledGames = existingGamesMarkedAsInstalled.Where(game => !installedGames.Any(i => i.GameId == game.GameId));
             foreach (var uninstalledGame in uninstalledGames)
             {
                 uninstalledGame.IsInstalled = false;
                 _playniteAPI.Database.Games.Update(uninstalledGame);
+            }
+
+            IReadOnlyList<InstalledGameInfo> gamePackagesInfo = null;
+
+            foreach (var installedGame in existingGamesMarkedAsInstalled)
+            {
+                IEnumerable<ExecutablePackage> packagesForGame = null;
+                foreach (var gameAction in installedGame.GameActions.ToArray())
+                {
+                    if (gameAction.IsPlayAction && gameAction.Arguments is null && gameAction.AdditionalArguments is null)
+                    {
+                        gamePackagesInfo ??= GetGamePackagesInfo();
+                        packagesForGame ??= GetExecutablePackages(gamePackagesInfo.Where(x => x.GameId == installedGame.GameId));
+
+                        if (packagesForGame.Any(package => string.Equals(package.ExecutablePath, gameAction.Path, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            installedGame.GameActions.Remove(gameAction);
+                            _playniteAPI.Database.Games.Update(installedGame);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public IReadOnlyList<PlayController> GetPlayActions(GetPlayActionsArgs args)
+    {
+        var gamePackagesInfo = GetGamePackagesInfo();
+        var packagesForGame = gamePackagesInfo.Where(x => x.GameId == args.Game.GameId).ToList();
+
+        var playActions = new List<PlayController>();
+
+        foreach (var executablePackage in GetExecutablePackages(packagesForGame))
+        {
+            var playAction = new AutomaticPlayController(args.Game)
+            {
+                Name = executablePackage.Package.Title ?? args.Game.Name,
+                Type = AutomaticPlayActionType.File,
+                Path = executablePackage.ExecutablePath,
+                WorkingDir = executablePackage.Package.InstallDir
+            };
+
+            playActions.Add(playAction);
+        }
+
+        return playActions;
+    }
+
+    private IEnumerable<ExecutablePackage> GetExecutablePackages(IEnumerable<InstalledGameInfo> packagesForGame)
+    {
+        foreach (var package in packagesForGame.Where(p => !string.IsNullOrEmpty(p.InstallDir)))
+        {
+            var launchOption = GetFittingLaunchOption(package);
+
+            if (launchOption != null)
+            {
+                string relativeGameExecutablePath = launchOption.ExecutablePath;
+                string gameExecutablePath = Path.Combine(package.InstallDir, "data", relativeGameExecutablePath);
+
+                if (File.Exists(gameExecutablePath))
+                {
+                    yield return new ExecutablePackage { ExecutablePath = gameExecutablePath, Package = package };
+
+                }
+                else
+                {
+                    _logger.Warn($"game executable does not exist ({gameExecutablePath})");
+                }
             }
         }
     }
@@ -106,10 +151,10 @@ public class InstalledGamesProvider
     private LaunchOption GetFittingLaunchOption(InstalledGameInfo package)
     {
         var launchOptions = package.LaunchOptions.EmptyIfNull().Where(l => l.IsValid());
-        var windowsLaunchOptions = launchOptions.Where(l => l.Os.Contains("windows", StringComparison.OrdinalIgnoreCase));
+        var windowsLaunchOptions = launchOptions.Where(l => l.Os.Contains("windows", StringComparison.OrdinalIgnoreCase)).ToArray();
         var windows32BitVersions = windowsLaunchOptions.Where(l => !l.Os.Contains("64"));
         var windows64BitVersions = windowsLaunchOptions.Where(l => l.Os.Contains("64"));
-        var fittingBitVersions = Utility.Is64BitOs ? windows64BitVersions.Concat(windows32BitVersions) : windows32BitVersions;
+        var fittingBitVersions = (Utility.Is64BitOs ? windows64BitVersions.Concat(windows32BitVersions) : windows32BitVersions).ToArray();
 
         if (fittingBitVersions.Any())
         {
@@ -182,12 +227,12 @@ public class InstalledGamesProvider
             return new Dictionary<long, GameJoltGameMetadata>();
         }
 
-        var filtered = installedGamesMetadata?.Objects?.Where(i => i.Value != null);
+        var filtered = installedGamesMetadata.Objects.Where(i => i.Value != null);
 
         return filtered.ToDictionary(x => x.Key, x => x.Value);
     }
 
-    private IEnumerable<InstalledGameInfo> GetGamePackagesInfo()
+    private IReadOnlyList<InstalledGameInfo> GetGamePackagesInfo()
     {
         var installedGamesInfoFile = Path.Combine(_gameJoltUserDataPath, "packages.wttf");
 
@@ -210,6 +255,6 @@ public class InstalledGamesProvider
             _logger.Warn($"Not found GameJolt file {installedGamesInfoFile}");
         }
 
-        return installedGamesMetadata?.Objects?.Values?.Where(i => i != null) ?? Enumerable.Empty<InstalledGameInfo>();
+        return installedGamesMetadata?.Objects?.Values?.Where(i => i != null).ToArray() ?? Array.Empty<InstalledGameInfo>();
     }
 }
