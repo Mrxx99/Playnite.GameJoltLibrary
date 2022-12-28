@@ -67,7 +67,7 @@ namespace GameJoltLibrary
                 importError = ex;
             }
 
-            // Skip update of uninstalled games if error on import
+            // Skip update of installed games if error on import
             if (importError is null)
             {
                 InstalledGamesProvider.UpdatedInstalledGames(installedGames);
