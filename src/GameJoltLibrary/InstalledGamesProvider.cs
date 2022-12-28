@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -40,7 +39,7 @@ public class InstalledGamesProvider
             var gameMetaData = new GameMetadata
             {
                 Source = new MetadataNameProperty("Game Jolt"),
-                GameId = gameInfo.Id.ToString(),
+                GameId = gameInfo.Id,
                 Name = gameInfo.Title,
                 IsInstalled = true,
                 BackgroundImage = new MetadataFile(gameInfo.HeaderMediaItem?.ImgUrl?.AbsoluteUri),

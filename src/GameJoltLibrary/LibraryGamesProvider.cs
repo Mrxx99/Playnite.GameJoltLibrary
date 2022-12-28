@@ -60,7 +60,7 @@ public class LibraryGamesProvider
 
                 var game = new GameMetadata
                 {
-                    GameId = ownedGame.Id.ToString(),
+                    GameId = ownedGame.Id,
                     Source = new MetadataNameProperty("Game Jolt"),
                     Name = ownedGame.Title,
                     IsInstalled = false,

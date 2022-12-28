@@ -61,7 +61,7 @@ namespace GameJoltLibrary
         public object RunningPid { get; set; }
 
         [SerializationPropertyName("game_id")]
-        public long GameId { get; set; }
+        public string GameId { get; set; }
 
         [SerializationPropertyName("title")]
         public string Title { get; set; }

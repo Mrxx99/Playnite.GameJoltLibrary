@@ -17,7 +17,7 @@ namespace GameJoltLibrary.Models
     public class GameJoltGameMetadata
     {
         [SerializationPropertyName("id")]
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         [SerializationPropertyName("title")]
         public string Title { get; set; }
