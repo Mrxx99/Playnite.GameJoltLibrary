@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Controls;
 using GameJoltLibrary.Exceptions;
+using GameJoltLibrary.Migration;
 using Playnite.SDK;
+using Playnite.SDK.Events;
 using Playnite.SDK.Models;
 using Playnite.SDK.Plugins;
 
@@ -14,6 +16,7 @@ namespace GameJoltLibrary
         private static readonly ILogger _logger = LogManager.GetLogger();
         private readonly GameJoltLibrarySettingsViewModel _settingsViewModel;
 
+        public GameJoltLibrarySettings Settings => _settingsViewModel.Settings;
         public InstalledGamesProvider InstalledGamesProvider { get; }
         public LibraryGamesProvider LibraryGamesProvider { get; }
         public GameJoltMetadataProvider MetadataProvider { get; }
@@ -70,7 +73,7 @@ namespace GameJoltLibrary
             // Skip update of installed games if error on import
             if (importError is null)
             {
-                InstalledGamesProvider.UpdatedInstalledGames(installedGames);
+                InstalledGamesProvider.UpdatedUninstalledGames(installedGames);
             }
 
             if (_settingsViewModel.Settings.ImportLibraryGames && _settingsViewModel.Settings.UserName is string userName)
@@ -120,6 +123,12 @@ namespace GameJoltLibrary
             }
 
             return games;
+        }
+
+        public override void OnApplicationStarted(OnApplicationStartedEventArgs args)
+        {
+            var migrationManager = new MigrationManager(this);
+            migrationManager.Migrate();
         }
 
         public override IEnumerable<PlayController> GetPlayActions(GetPlayActionsArgs args)

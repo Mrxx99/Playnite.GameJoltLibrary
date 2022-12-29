@@ -64,7 +64,7 @@ public class InstalledGamesProvider
         return games.Values.ToList();
     }
 
-    public void UpdatedInstalledGames(GameMetadata[] installedGames)
+    public void UpdatedUninstalledGames(GameMetadata[] installedGames)
     {
         using (_playniteAPI.Database.BufferedUpdate())
         {
@@ -76,27 +76,6 @@ public class InstalledGamesProvider
             {
                 uninstalledGame.IsInstalled = false;
                 _playniteAPI.Database.Games.Update(uninstalledGame);
-            }
-
-            IReadOnlyList<InstalledGameInfo> gamePackagesInfo = null;
-
-            foreach (var installedGame in existingGamesMarkedAsInstalled)
-            {
-                IEnumerable<ExecutablePackage> packagesForGame = null;
-                foreach (var gameAction in installedGame.GameActions.ToArray())
-                {
-                    if (gameAction.IsPlayAction && gameAction.Arguments is null && gameAction.AdditionalArguments is null)
-                    {
-                        gamePackagesInfo ??= GetGamePackagesInfo();
-                        packagesForGame ??= GetExecutablePackages(gamePackagesInfo.Where(x => x.GameId == installedGame.GameId));
-
-                        if (packagesForGame.Any(package => string.Equals(package.ExecutablePath, gameAction.Path, StringComparison.OrdinalIgnoreCase)))
-                        {
-                            installedGame.GameActions.Remove(gameAction);
-                            _playniteAPI.Database.Games.Update(installedGame);
-                        }
-                    }
-                }
             }
         }
     }
@@ -124,7 +103,7 @@ public class InstalledGamesProvider
         return playActions;
     }
 
-    private IEnumerable<ExecutablePackage> GetExecutablePackages(IEnumerable<InstalledGameInfo> packagesForGame)
+    public IEnumerable<ExecutablePackage> GetExecutablePackages(IEnumerable<InstalledGameInfo> packagesForGame)
     {
         foreach (var package in packagesForGame.Where(p => !string.IsNullOrEmpty(p.InstallDir)))
         {
@@ -232,7 +211,7 @@ public class InstalledGamesProvider
         return filtered.ToDictionary(x => x.Key, x => x.Value);
     }
 
-    private IReadOnlyList<InstalledGameInfo> GetGamePackagesInfo()
+    public IReadOnlyList<InstalledGameInfo> GetGamePackagesInfo()
     {
         var installedGamesInfoFile = Path.Combine(_gameJoltUserDataPath, "packages.wttf");
 

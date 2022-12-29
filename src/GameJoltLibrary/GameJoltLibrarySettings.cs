@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Playnite.SDK;
 using Playnite.SDK.Data;
 
@@ -16,7 +17,7 @@ namespace GameJoltLibrary
 
         public string UserName { get => _userName; set => SetValue(ref _userName, value); }
 
-        public bool Enab { get; set; }
+        public Version LibraryVersion { get; set; }
     }
 
     public class GameJoltLibrarySettingsViewModel : ObservableObject, ISettings
