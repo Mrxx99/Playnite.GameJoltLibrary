@@ -2,7 +2,7 @@ AddonId: GameJoltLibrary_555d58fd-a000-401b-972c-9230bed81aed
 Packages:
   - Version: 1.1
     RequiredApiVersion: 6.5.0
-    ReleaseDate: 2022-28-12
+    ReleaseDate: 2022-12-28
     PackageUrl: https://github.com/Mrxx99/Playnite.GameJoltLibrary/releases/download/v1.1/GameJoltLibrary_555d58fd-a000-401b-972c-9230bed81aed_1_1.pext
     Changelog:
       - Fixed missing play actions
