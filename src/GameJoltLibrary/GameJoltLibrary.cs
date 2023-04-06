@@ -42,7 +42,7 @@ namespace GameJoltLibrary
             };
             _logger.Info("GemeJolt library initialized.");
             InstalledGamesProvider = new InstalledGamesProvider(api, _logger);
-            LibraryGamesProvider = new LibraryGamesProvider(api, _logger);
+            LibraryGamesProvider = new LibraryGamesProvider(api, Settings, _logger);
             MetadataProvider = new GameJoltMetadataProvider(api, _logger);
         }
 

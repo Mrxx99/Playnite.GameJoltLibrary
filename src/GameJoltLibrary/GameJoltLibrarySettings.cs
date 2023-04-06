@@ -9,11 +9,14 @@ namespace GameJoltLibrary
     {
         private bool _importInstalledGames = true;
         private bool _importLibraryGames = false;
+        private bool _treatFollowedGamesAsLibraryGames = false;
         private string _userName;
 
         public bool ImportInstalledGames { get => _importInstalledGames; set => SetValue(ref _importInstalledGames, value); }
 
         public bool ImportLibraryGames { get => _importLibraryGames; set => SetValue(ref _importLibraryGames, value); }
+        
+        public bool TreatFollowedGamesAsLibraryGames { get => _treatFollowedGamesAsLibraryGames; set => SetValue(ref _treatFollowedGamesAsLibraryGames, value); }
 
         public string UserName { get => _userName; set => SetValue(ref _userName, value); }
 
