@@ -40,7 +40,7 @@ namespace GameJoltLibrary
             {
                 HasSettings = true
             };
-            _logger.Info("GemeJolt library initialized.");
+            _logger.Info("GameJolt library initialized.");
             InstalledGamesProvider = new InstalledGamesProvider(api, _logger);
             LibraryGamesProvider = new LibraryGamesProvider(api, _logger);
             MetadataProvider = new GameJoltMetadataProvider(api, _logger);
