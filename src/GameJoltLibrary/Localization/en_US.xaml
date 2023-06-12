@@ -1,7 +1,8 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:system="clr-namespace:System;assembly=mscorlib">
     <system:String x:Key="LOCGameJoltImportInstalledGames">Import _installed games</system:String>
-    <system:String x:Key="LOCGameJoltImportLibraryGames">Import _not installed games (only purchased ones)</system:String>
+    <system:String x:Key="LOCGameJoltImportLibraryGames">Import _not installed games</system:String>
+    <system:String x:Key="LOCGameJoltTreatFollowedGamesAsLibraryGames">Import _followed games as not installed games</system:String>
     <system:String x:Key="LOCGameJoltUserName">Game Jolt _user name:</system:String>
     <system:String x:Key="LOCGameJoltUserNotFoundError">Game Jolt user '{0}' could not be found.</system:String>
 </ResourceDictionary>

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using GameJoltLibrary.Exceptions;
+using GameJoltLibrary.Helpers;
 using GameJoltLibrary.Models;
 using Playnite.SDK;
 using Playnite.SDK.Data;
@@ -16,12 +17,14 @@ namespace GameJoltLibrary;
 public class LibraryGamesProvider
 {
     private readonly IPlayniteAPI _playniteAPI;
+    private readonly GameJoltLibrarySettings _settings;
     private readonly ILogger _logger;
     private readonly RetryPolicy<List<GameJoltGameMetadata>> _retryOwnedGamesPolicy;
 
-    public LibraryGamesProvider(IPlayniteAPI playniteAPI, ILogger logger)
+    public LibraryGamesProvider(IPlayniteAPI playniteAPI, GameJoltLibrarySettings settings, ILogger logger)
     {
         _playniteAPI = playniteAPI;
+        _settings = settings;
         _logger = logger;
         _retryOwnedGamesPolicy = Policy
             .HandleResult<List<GameJoltGameMetadata>>(e => e is null)
@@ -36,25 +39,22 @@ public class LibraryGamesProvider
         try
         {
             string ownedGamesUrl = $"https://gamejolt.com/site-api/web/library/games/owned/@{userName}";
+            var ownedGames = GetGamesFromApi(ownedGamesUrl, cancelToken);
 
-            var ownedGames = _retryOwnedGamesPolicy.Execute(() =>
+            var libraryGames = ownedGames;
+
+            if (_settings.TreatFollowedGamesAsLibraryGames)
             {
-                var http = new HttpClient();
+                string followedGamesUrl = $"https://gamejolt.com/site-api/web/library/games/followed/@{userName}";
+                var followedGames = GetGamesFromApi(followedGamesUrl, cancelToken);
+                libraryGames = libraryGames.Concat(followedGames);
+            }
 
-                var result = http.GetAsync(ownedGamesUrl, cancelToken).GetAwaiter().GetResult();
+            var libraryGamesArray = libraryGames
+                .Distinct(SelectorComparer.Create((GameJoltGameMetadata x) => x.Id))
+                .ToArray();
 
-                if (result.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    throw new UserNotFoundException();
-                }
-
-                var stringContent = result.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-
-                var ownedGamesResult = Serialization.FromJsonStream<GameJoltWebResult<LibraryGamesResultPayload>>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
-                return ownedGamesResult.Payload.Games;
-            });
-
-            foreach (var ownedGame in ownedGames)
+            foreach (var ownedGame in libraryGamesArray)
             {
                 cancelToken.ThrowIfCancellationRequested();
 
@@ -78,6 +78,26 @@ public class LibraryGamesProvider
         }
 
         return games;
+    }
+
+    private IEnumerable<GameJoltGameMetadata> GetGamesFromApi(string ownedGamesUrl, CancellationToken cancelToken)
+    {
+        return _retryOwnedGamesPolicy.Execute(() =>
+        {
+            var http = new HttpClient();
+
+            var result = http.GetAsync(ownedGamesUrl, cancelToken).GetAwaiter().GetResult();
+
+            if (result.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                throw new UserNotFoundException();
+            }
+
+            var stringContent = result.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+
+            var ownedGamesResult = Serialization.FromJsonStream<GameJoltWebResult<LibraryGamesResultPayload>>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
+            return ownedGamesResult.Payload.Games;
+        });
     }
 
     public void RemoveLibraryGames()
