@@ -58,7 +58,7 @@ namespace GameJoltLibrary
             {
                 installedGames = InstalledGamesProvider.GetInstalledGames(args.CancelToken).ToArray();
 
-                if (_settingsViewModel.Settings.ImportInstalledGames)
+                if (Settings.ImportInstalledGames)
                 {
                     _logger.Debug($"Found {installedGames.Length} installed Game Jolt games.");
                     games.AddRange(installedGames);
@@ -79,7 +79,7 @@ namespace GameJoltLibrary
 
             PlayniteApi.Notifications.RemoveUserNotFound();
 
-            if (_settingsViewModel.Settings.ImportLibraryGames && _settingsViewModel.Settings.UserName is string userName)
+            if (Settings.ImportLibraryGames && Settings.UserName is string userName)
             {
                 try
                 {
