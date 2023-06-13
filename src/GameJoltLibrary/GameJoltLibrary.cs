@@ -84,10 +84,10 @@ namespace GameJoltLibrary
                 try
                 {
                     var libraryGames = LibraryGamesProvider.GetLibraryGames(userName, args.CancelToken);
+                    LibraryGamesProvider.UpdateRemovedLibraryGames(libraryGames);
                     var libraryGamesToAdd = libraryGames.Where(libraryGame => !games.Any(game => game.GameId == libraryGame.GameId)).ToArray();
                     _logger.Debug(message: $"Found {libraryGamesToAdd.Length} library Game Jolt games.");
-                    games.AddRange(libraryGames);
-                    LibraryGamesProvider.UpdateRemovedLibraryGames(libraryGames);
+                    games.AddRange(libraryGamesToAdd);
                 }
                 catch (UserNotFoundException ex)
                 {
