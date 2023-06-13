@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Controls;
 using GameJoltLibrary.Exceptions;
+using GameJoltLibrary.Helpers;
 using GameJoltLibrary.Migration;
 using Playnite.SDK;
 using Playnite.SDK.Events;
@@ -76,6 +77,8 @@ namespace GameJoltLibrary
                 InstalledGamesProvider.UpdatedUninstalledGames(installedGames);
             }
 
+            PlayniteApi.Notifications.RemoveUserNotFound();
+
             if (_settingsViewModel.Settings.ImportLibraryGames && _settingsViewModel.Settings.UserName is string userName)
             {
                 try
@@ -90,12 +93,7 @@ namespace GameJoltLibrary
                 {
                     _logger.Error(ex, $"User {userName} not found.");
                     LibraryGamesProvider.RemoveLibraryGames();
-                    PlayniteApi.Notifications.Add(new NotificationMessage(
-                        UserNotFoundErrorMessageId,
-                        string.Format(PlayniteApi.Resources.GetString("LOCLibraryImportError"), Name) + Environment.NewLine +
-                        string.Format(PlayniteApi.Resources.GetString("LOCGameJoltUserNotFoundError"), userName),
-                        NotificationType.Error,
-                        () => OpenSettingsView()));
+                    PlayniteApi.Notifications.NotifyUserNotFound(userName, this);
                 }
                 catch (Exception ex)
                 {
@@ -110,16 +108,11 @@ namespace GameJoltLibrary
 
             if (importError is not null)
             {
-                PlayniteApi.Notifications.Add(new NotificationMessage(
-                    ImportErrorMessageId,
-                    string.Format(PlayniteApi.Resources.GetString("LOCLibraryImportError"), Name) +
-                    Environment.NewLine + importError.Message,
-                    NotificationType.Error,
-                    () => OpenSettingsView()));
+                PlayniteApi.Notifications.NotifyImportError(importError, this);
             }
             else
             {
-                PlayniteApi.Notifications.Remove(ImportErrorMessageId);
+                PlayniteApi.Notifications.RemoveImportError();
             }
 
             return games;
