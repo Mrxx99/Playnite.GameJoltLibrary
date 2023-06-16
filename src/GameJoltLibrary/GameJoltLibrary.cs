@@ -43,7 +43,7 @@ namespace GameJoltLibrary
             };
             _logger.Info("GameJolt library initialized.");
             InstalledGamesProvider = new InstalledGamesProvider(api, _logger);
-            LibraryGamesProvider = new LibraryGamesProvider(api, Settings, _logger);
+            LibraryGamesProvider = new LibraryGamesProvider(api, _logger);
             MetadataProvider = new GameJoltMetadataProvider(api, _logger);
         }
 
@@ -83,7 +83,7 @@ namespace GameJoltLibrary
             {
                 try
                 {
-                    var libraryGames = LibraryGamesProvider.GetLibraryGames(userName, args.CancelToken);
+                    var libraryGames = LibraryGamesProvider.GetLibraryGames(Settings, args.CancelToken);
                     LibraryGamesProvider.UpdateRemovedLibraryGames(libraryGames);
                     var libraryGamesToAdd = libraryGames.Where(libraryGame => !games.Any(game => game.GameId == libraryGame.GameId)).ToArray();
                     _logger.Debug(message: $"Found {libraryGamesToAdd.Length} library Game Jolt games.");

@@ -17,14 +17,12 @@ namespace GameJoltLibrary;
 public class LibraryGamesProvider
 {
     private readonly IPlayniteAPI _playniteAPI;
-    private readonly GameJoltLibrarySettings _settings;
     private readonly ILogger _logger;
     private readonly RetryPolicy<List<GameJoltGameMetadata>> _retryOwnedGamesPolicy;
 
-    public LibraryGamesProvider(IPlayniteAPI playniteAPI, GameJoltLibrarySettings settings, ILogger logger)
+    public LibraryGamesProvider(IPlayniteAPI playniteAPI, ILogger logger)
     {
         _playniteAPI = playniteAPI;
-        _settings = settings;
         _logger = logger;
         _retryOwnedGamesPolicy = Policy
             .HandleResult<List<GameJoltGameMetadata>>(e => e is null)
@@ -32,18 +30,19 @@ public class LibraryGamesProvider
             .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(1));
     }
 
-    public IEnumerable<GameMetadata> GetLibraryGames(string userName, CancellationToken cancelToken)
+    public IEnumerable<GameMetadata> GetLibraryGames(GameJoltLibrarySettings settings, CancellationToken cancelToken)
     {
         var games = new List<GameMetadata>();
 
         try
         {
+            string userName = settings.UserName;
             string ownedGamesUrl = $"https://gamejolt.com/site-api/web/library/games/owned/@{userName}";
             var ownedGames = GetGamesFromApi(ownedGamesUrl, cancelToken);
 
             var libraryGames = ownedGames;
 
-            if (_settings.TreatFollowedGamesAsLibraryGames)
+            if (settings.TreatFollowedGamesAsLibraryGames)
             {
                 string followedGamesUrl = $"https://gamejolt.com/site-api/web/library/games/followed/@{userName}";
                 var followedGames = GetGamesFromApi(followedGamesUrl, cancelToken);
