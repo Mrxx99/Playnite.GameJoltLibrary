@@ -8,7 +8,9 @@
              mc:Ignorable="d"
              d:DesignHeight="400" d:DesignWidth="600">
     <StackPanel Margin="20">
-        <TextBlock Text="Changing one of these options requires a restart"/>
+        <TextBlock Text="{DynamicResource LOCGameJoltSettingChangesNote}"
+                   d:Text="Changing one of these options requires a restart"
+                   TextWrapping="Wrap"/>
 
         <CheckBox DockPanel.Dock="Top" Name="CheckGameJoltImportInstalled"
                   Margin="0,20,0,0"
