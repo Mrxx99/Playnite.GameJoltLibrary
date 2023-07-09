@@ -6,4 +6,5 @@
     <system:String x:Key="LOCGameJoltUserName">Game Jolt _Benutzername:</system:String>
     <system:String x:Key="LOCGameJoltUserNotFoundError">Game Jolt Benutzer '{0}' konnte nicht gefunden werden.</system:String>
     <system:String x:Key="LOCGameJoltSettingChangesNote">Das Ändern einer dieser Optionen erfordert eine Aktualisierung der Bibliothek (F5) oder einen Neustart von Playnite.</system:String>
+    <system:String x:Key="LOCGameJoltReportToGithub">Schlage Verbesserungen vor oder melde einen Fehler.</system:String>
 </ResourceDictionary>
