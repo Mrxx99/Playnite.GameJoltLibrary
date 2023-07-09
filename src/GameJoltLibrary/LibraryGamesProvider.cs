@@ -33,19 +33,20 @@ public class LibraryGamesProvider
     public IEnumerable<GameMetadata> GetLibraryGames(GameJoltLibrarySettings settings, CancellationToken cancelToken)
     {
         var games = new List<GameMetadata>();
+        using var httpClient = new HttpClient();
 
         try
         {
             string userName = settings.UserName;
             string ownedGamesUrl = $"https://gamejolt.com/site-api/web/library/games/owned/@{userName}";
-            var ownedGames = GetGamesFromApi(ownedGamesUrl, cancelToken);
+            var ownedGames = GetGamesFromApi(httpClient, ownedGamesUrl, cancelToken);
 
             var libraryGames = ownedGames;
 
             if (settings.TreatFollowedGamesAsLibraryGames)
             {
                 string followedGamesUrl = $"https://gamejolt.com/site-api/web/library/games/followed/@{userName}";
-                var followedGames = GetGamesFromApi(followedGamesUrl, cancelToken);
+                var followedGames = GetGamesFromApi(httpClient, followedGamesUrl, cancelToken);
                 libraryGames = libraryGames.Concat(followedGames);
             }
 
@@ -79,7 +80,7 @@ public class LibraryGamesProvider
         return games;
     }
 
-    private IEnumerable<GameJoltGameMetadata> GetGamesFromApi(string getGamesUrl, CancellationToken cancelToken)
+    private IEnumerable<GameJoltGameMetadata> GetGamesFromApi(HttpClient httpClient, string getGamesUrl, CancellationToken cancelToken)
     {
         bool isFirstRequest = true;
         int currentPage = 1;
@@ -88,7 +89,7 @@ public class LibraryGamesProvider
 
         while (currentPage <= totalPages)
         {
-            var gamesOnPage = GetGamesFromApi(getGamesUrl, currentPage, out int totalGames, out int gamesPerPage, cancelToken);
+            var gamesOnPage = GetGamesFromApi(httpClient, getGamesUrl, currentPage, out int totalGames, out int gamesPerPage, cancelToken);
             games.AddRange(gamesOnPage); 
 
             if (isFirstRequest)
@@ -103,13 +104,11 @@ public class LibraryGamesProvider
         return games;
     }
 
-    private IEnumerable<GameJoltGameMetadata> GetGamesFromApi(string getGamesUrl, int pageNumber, out int totalGames, out int gamesPerPage, CancellationToken cancelToken)
+    private IEnumerable<GameJoltGameMetadata> GetGamesFromApi(HttpClient httpClient, string getGamesUrl, int pageNumber, out int totalGames, out int gamesPerPage, CancellationToken cancelToken)
     {
         var payload = _retryOwnedGamesPolicy.Execute(() =>
         {
-            var http = new HttpClient();
-
-            var result = http.GetAsync($"{getGamesUrl}?page={pageNumber}", cancelToken).GetAwaiter().GetResult();
+            var result = httpClient.GetAsync($"{getGamesUrl}?page={pageNumber}", cancelToken).GetAwaiter().GetResult();
 
             if (result.StatusCode == System.Net.HttpStatusCode.NotFound)
             {

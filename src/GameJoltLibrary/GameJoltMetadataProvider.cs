@@ -131,9 +131,10 @@ namespace GameJoltLibrary
         {
             string gameDiscoverUrl = $"https://gamejolt.com/site-api/web/discover/games/{gameId}";
 
+            using var http = new HttpClient();
+
             var metaData = _retryMetadataPolicy.Execute(() =>
             {
-                using var http = new HttpClient();
                 var result = http.GetAsync(gameDiscoverUrl).GetAwaiter().GetResult();
 
                 var resultObj = Serialization.FromJsonStream<GameJoltWebResult<LibraryGameResultPayload>>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
