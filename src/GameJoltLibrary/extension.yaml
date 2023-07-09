@@ -5,3 +5,6 @@ Version: 1.2.0
 Module: GameJoltLibrary.dll
 Type: GameLibrary
 Icon: Resources\GameJoltIcon.png
+Links:
+  - Name: Github
+    Url: https://github.com/Mrxx99/Playnite.GameJoltLibrary
