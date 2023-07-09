@@ -1,5 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Net.Http;
+using System.Threading.Tasks;
+using GameJoltLibrary.Exceptions;
+using GameJoltLibrary.Models;
 using Playnite.SDK;
 using Playnite.SDK.Data;
 
@@ -10,6 +15,7 @@ namespace GameJoltLibrary
         private bool _importInstalledGames = true;
         private bool _importLibraryGames = false;
         private bool _treatFollowedGamesAsLibraryGames = false;
+        private bool _treatPlaylistGamesAsLibraryGames = false;
         private string _userName;
 
         public bool ImportInstalledGames { get => _importInstalledGames; set => SetValue(ref _importInstalledGames, value); }
@@ -17,6 +23,7 @@ namespace GameJoltLibrary
         public bool ImportLibraryGames { get => _importLibraryGames; set => SetValue(ref _importLibraryGames, value); }
         
         public bool TreatFollowedGamesAsLibraryGames { get => _treatFollowedGamesAsLibraryGames; set => SetValue(ref _treatFollowedGamesAsLibraryGames, value); }
+        public bool TreatPlaylistGamesAsLibraryGames { get => _treatPlaylistGamesAsLibraryGames; set => SetValue(ref _treatPlaylistGamesAsLibraryGames, value); }
 
         public string UserName { get => _userName; set => SetValue(ref _userName, value); }
 
@@ -30,6 +37,26 @@ namespace GameJoltLibrary
 
         private GameJoltLibrarySettings _settings;
         public GameJoltLibrarySettings Settings { get => _settings; set => SetValue(ref _settings, value); }
+
+        private ObservableCollection<GameJoltPlaylist> _playlists;
+        public ObservableCollection<GameJoltPlaylist> Playlists { get => _playlists; set => SetValue(ref _playlists, value); }
+
+        private string _playlistUser;
+
+        public bool ImportPlaylistGames
+        {
+            get => Settings.TreatPlaylistGamesAsLibraryGames;
+            set
+            {
+                Settings.TreatPlaylistGamesAsLibraryGames = value;
+                OnPropertyChanged();
+                if (Settings.TreatPlaylistGamesAsLibraryGames)
+                {
+                    _ = GetPlaylists();
+                }
+            }
+        }
+
 
         public GameJoltLibrarySettingsViewModel(GameJoltLibrary plugin)
         {
@@ -50,10 +77,44 @@ namespace GameJoltLibrary
             }
         }
 
+        public async Task GetPlaylists()
+        {
+            if (Settings.UserName is null)
+            {
+                Playlists = null;
+                _playlistUser = null;
+                return;
+            }
+            else if (_playlistUser == Settings.UserName)
+            {
+                return;
+            }
+
+            using var http = new HttpClient();
+
+            var result = await http.GetAsync($"https://gamejolt.com/site-api/web/library/@{Settings.UserName}");
+
+            if (result.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                throw new UserNotFoundException();
+            }
+
+            var stringContent = await result.Content.ReadAsStringAsync();
+
+            var playlistsResult = Serialization.FromJsonStream<GameJoltWebResult<LibraryPlaylistsPayload>>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
+            _playlistUser = Settings.UserName;
+            Playlists = new ObservableCollection<GameJoltPlaylist>(playlistsResult.Payload.Playlists);
+        }
+
         public void BeginEdit()
         {
             // Code executed when settings view is opened and user starts editing values.
             _editingClone = Serialization.GetClone(Settings);
+
+            if (Settings.TreatPlaylistGamesAsLibraryGames)
+            {
+                _ = GetPlaylists();
+            }
         }
 
         public void CancelEdit()

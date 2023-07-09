@@ -39,8 +39,11 @@ public class LibraryGamesProvider
             string userName = settings.UserName;
             string ownedGamesUrl = $"https://gamejolt.com/site-api/web/library/games/owned/@{userName}";
             var ownedGames = GetGamesFromApi(ownedGamesUrl, cancelToken);
+            string plGamesUrl = $"https://gamejolt.com/site-api/web/library/games/playlist/551406";
 
             var libraryGames = ownedGames;
+
+            var result = GetGamesFromApi(plGamesUrl, cancelToken);
 
             if (settings.TreatFollowedGamesAsLibraryGames)
             {
@@ -131,3 +134,6 @@ public class LibraryGamesProvider
         }
     }
 }
+
+
+// /site-api/web/library/games/playlist/551406

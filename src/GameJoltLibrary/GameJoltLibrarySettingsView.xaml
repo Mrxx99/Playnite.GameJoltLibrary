@@ -12,13 +12,13 @@
                    d:Text="Changing one of these options requires a restart"
                    TextWrapping="Wrap"/>
 
-        <CheckBox DockPanel.Dock="Top" Name="CheckGameJoltImportInstalled"
+        <CheckBox Name="CheckGameJoltImportInstalled"
                   Margin="0,20,0,0"
                   IsChecked="{Binding Settings.ImportInstalledGames}"
                   Content="{DynamicResource LOCGameJoltImportInstalledGames}"
                   d:Content="Import installed games"/>
 
-        <CheckBox DockPanel.Dock="Top" Name="CheckGameJoltImportLibraryGames"
+        <CheckBox Name="CheckGameJoltImportLibraryGames"
                   Margin="0,15,0,0"
                   IsChecked="{Binding Settings.ImportLibraryGames}"
                   Content="{DynamicResource LOCGameJoltImportLibraryGames}"
@@ -34,12 +34,18 @@
                  Text="{Binding Settings.UserName}"
                  IsEnabled="{Binding Settings.ImportLibraryGames}"/>
 
-        <CheckBox DockPanel.Dock="Top"
-                  Margin="0,15,0,0"
+        <CheckBox Margin="0,15,0,0"
                   IsChecked="{Binding Settings.TreatFollowedGamesAsLibraryGames}"
                   Content="{DynamicResource LOCGameJoltTreatFollowedGamesAsLibraryGames}"
                   d:Content="Treat followed games as library games"
                   IsEnabled="{Binding Settings.ImportLibraryGames}"/>
-        
+
+        <CheckBox Margin="0,15,0,0"
+                  IsChecked="{Binding ImportPlaylistGames}"
+                  Content="{DynamicResource LOCGameJoltTreatPlaylistGamesAsLibraryGames}"
+                  d:Content="Treat games from a playlist as library games"
+                  IsEnabled="{Binding Settings.ImportLibraryGames}"/>
+        <TextBlock Text="Select playlist:"/>
+        <ComboBox ItemsSource="{Binding Playlists}" DisplayMemberPath="Name"/>
     </StackPanel>
 </UserControl>
