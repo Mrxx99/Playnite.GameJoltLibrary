@@ -18,14 +18,14 @@ public class LibraryGamesProvider
 {
     private readonly IPlayniteAPI _playniteAPI;
     private readonly ILogger _logger;
-    private readonly RetryPolicy<List<GameJoltGameMetadata>> _retryOwnedGamesPolicy;
+    private readonly RetryPolicy<LibraryGamesResultPayload> _retryOwnedGamesPolicy;
 
     public LibraryGamesProvider(IPlayniteAPI playniteAPI, ILogger logger)
     {
         _playniteAPI = playniteAPI;
         _logger = logger;
         _retryOwnedGamesPolicy = Policy
-            .HandleResult<List<GameJoltGameMetadata>>(e => e is null)
+            .HandleResult<LibraryGamesResultPayload>(e => e is null)
             .Or<Exception>(ex => ex is not UserNotFoundException)
             .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(1));
     }
@@ -79,13 +79,37 @@ public class LibraryGamesProvider
         return games;
     }
 
-    private IEnumerable<GameJoltGameMetadata> GetGamesFromApi(string ownedGamesUrl, CancellationToken cancelToken)
+    private IEnumerable<GameJoltGameMetadata> GetGamesFromApi(string getGamesUrl, CancellationToken cancelToken)
     {
-        return _retryOwnedGamesPolicy.Execute(() =>
+        bool isFirstRequest = true;
+        int currentPage = 1;
+        int totalPages = 1;
+        var games = new List<GameJoltGameMetadata>();
+
+        while (currentPage <= totalPages)
+        {
+            var gamesOnPage = GetGamesFromApi(getGamesUrl, currentPage, out int totalGames, out int gamesPerPage, cancelToken);
+            games.AddRange(gamesOnPage); 
+
+            if (isFirstRequest)
+            {
+                isFirstRequest = false;
+                totalPages = (int)Math.Ceiling((double)totalGames / gamesPerPage);
+            }
+
+            currentPage++;
+        }
+
+        return games;
+    }
+
+    private IEnumerable<GameJoltGameMetadata> GetGamesFromApi(string getGamesUrl, int pageNumber, out int totalGames, out int gamesPerPage, CancellationToken cancelToken)
+    {
+        var payload = _retryOwnedGamesPolicy.Execute(() =>
         {
             var http = new HttpClient();
 
-            var result = http.GetAsync(ownedGamesUrl, cancelToken).GetAwaiter().GetResult();
+            var result = http.GetAsync($"{getGamesUrl}?page={pageNumber}", cancelToken).GetAwaiter().GetResult();
 
             if (result.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
@@ -95,8 +119,13 @@ public class LibraryGamesProvider
             var stringContent = result.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 
             var ownedGamesResult = Serialization.FromJsonStream<GameJoltWebResult<LibraryGamesResultPayload>>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
-            return ownedGamesResult.Payload.Games;
+
+            return ownedGamesResult.Payload;
         });
+
+        totalGames = payload.GamesCount;
+        gamesPerPage = payload.PerPage;
+        return payload.Games;
     }
 
     public void RemoveLibraryGames()

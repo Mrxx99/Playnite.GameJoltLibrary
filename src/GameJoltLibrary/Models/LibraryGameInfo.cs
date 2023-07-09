@@ -13,6 +13,12 @@ internal class LibraryGamesResultPayload
 {
     [SerializationPropertyName("games")]
     public List<GameJoltGameMetadata> Games { get; set; }
+
+    [SerializationPropertyName("gamesCount")]
+    public int GamesCount { get; set; }
+
+    [SerializationPropertyName("perPage")]
+    public int PerPage { get; set; }
 }
 
 internal class LibraryGameResultPayload
