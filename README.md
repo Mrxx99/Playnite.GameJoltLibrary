@@ -13,6 +13,7 @@ Find on addons database: [Game Jolt Library](https://playnite.link/addons.html#G
 ## Features:
 - Import installed games (requires [Game Jolt client](https://gamejolt.com/app))
 - Import purchased games (Go to addon settings and enable + provide user name)
+- Treat games followed in Game Jolt as owned (non installed) games
 - Launch game
 - Read metadata from offical store page
 - Currently supported languages: English, German
