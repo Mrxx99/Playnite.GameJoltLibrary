@@ -3,6 +3,7 @@
 [![GitHub all releases](https://img.shields.io/github/downloads/mrxx99/Playnite.GameJoltLibrary/total?style=for-the-badge)](#)
 [![GitHub release](https://img.shields.io/github/v/release/mrxx99/Playnite.GameJoltLibrary?style=for-the-badge)](https://github.com/Mrxx99/Playnite.GameJoltLibrary/releases)
 [![Playnite add-on](https://img.shields.io/badge/Playnite_add--on-GameJoltLibrary-ff5a30?style=for-the-badge)](https://playnite.link/addons.html#GameJoltLibrary_555d58fd-a000-401b-972c-9230bed81aed)
+[![GitHub Build Status)](https://img.shields.io/github/actions/workflow/status/mrxx99/Playnite.GameJoltLibrary/dotnet.yml?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/Mrxx99/Playnite.GameJoltLibrary/actions/workflows/dotnet.yml)
 
 # GameJoltLibrary
 
