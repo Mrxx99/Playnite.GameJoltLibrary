@@ -1,0 +1,19 @@
+name: After-Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  comment_released_items:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: apexskier/github-release-commenter@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          comment-template: |
+            Release {release_link} addresses this.
+          label-template: |
+            state: released
