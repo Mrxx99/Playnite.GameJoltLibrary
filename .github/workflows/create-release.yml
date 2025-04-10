@@ -21,6 +21,7 @@ jobs:
 
     env:
       Solution_Path: src/GameJoltLibrary.sln
+      Playnite_Solution_Path: ref\PlayniteRepo\source\Playnite.sln
       DOTNET_NOLOGO: true
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
 
@@ -44,9 +45,11 @@ jobs:
         run: dotnet restore $env:Solution_Path
       - name: Build GameJoltLibrary
         run: dotnet build --no-restore --configuration Release $env:Solution_Path
-        
+
+      - name: Restore dependencies Playnite
+        run: dotnet restore $env:Playnite_Solution_Path
       - name: Build Playnite
-        run: msbuild ref\PlayniteRepo\source\Playnite.sln /p:Configuration=Release /p:Platform=x86 /t:Build
+        run: msbuild $env:Playnite_Solution_Path /p:Configuration=Release /p:Platform=x86 /t:Build
           
       - name: pack GameJolLibrary
         run: ref/PlayniteRepo\source\Tools\Playnite.Toolbox\bin\x86\Release\Toolbox.exe pack build/Release build/pack
