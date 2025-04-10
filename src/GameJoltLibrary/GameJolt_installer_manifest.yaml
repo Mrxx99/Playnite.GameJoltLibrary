@@ -1,5 +1,11 @@
 AddonId: GameJoltLibrary_555d58fd-a000-401b-972c-9230bed81aed
 Packages:
+  - Version: 1.2.3
+    RequiredApiVersion: 6.11.0
+    ReleaseDate: 2025-04-10
+    PackageUrl: https://github.com/Mrxx99/Playnite.GameJoltLibrary/releases/download/v1.2.3/GameJoltLibrary_555d58fd-a000-401b-972c-9230bed81aed_1_2_3.pext
+    Changelog:
+      - fix login window not working correctly
   - Version: 1.2.2
     RequiredApiVersion: 6.11.0
     ReleaseDate: 2025-04-10
