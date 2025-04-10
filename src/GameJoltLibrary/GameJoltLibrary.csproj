@@ -48,11 +48,11 @@
     <PackageReference Include="AngleSharp" Version="0.9.9" />
     <PackageReference Include="PlayniteSDK" Version="6.11.0" />
     <PackageReference Include="Polly" Version="5.1.0" />
-    <PackageReference Include="PolySharp" Version="1.14.1">
+    <PackageReference Include="PolySharp" Version="1.15.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    <PackageReference Include="System.ValueTuple" Version="4.6.1" />
   </ItemGroup>
 
   <ItemGroup>
