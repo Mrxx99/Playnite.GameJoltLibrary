@@ -28,7 +28,7 @@ public class LibraryGamesProvider
         _retryOwnedGamesPolicy = Policy
             .HandleResult<LibraryGamesResultPayload>(e => e is null)
             .Or<Exception>(ex => ex is not UserNotFoundException)
-            .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(1));
+            .WaitAndRetry(1, retryAttempt => TimeSpan.FromSeconds(1));
     }
 
     public IEnumerable<GameMetadata> GetLibraryGames(GameJoltLibrarySettings settings, CancellationToken cancelToken)
@@ -100,7 +100,7 @@ public class LibraryGamesProvider
                 ? GetGamesFromApiUsingWebView(webView, getGamesUrl, currentPage, out int totalGames, out int gamesPerPage, cancelToken)
                 : GetGamesFromApi(httpClient, getGamesUrl, currentPage, out totalGames, out gamesPerPage, cancelToken);
 
-            games.AddRange(gamesOnPage); 
+            games.AddRange(gamesOnPage);
 
             if (isFirstRequest)
             {
@@ -154,8 +154,6 @@ public class LibraryGamesProvider
 
             result.EnsureSuccessStatusCode();
 
-            var stringContent = result.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-            string tt = result.Content.ReadAsStringAsync().GetAwaiter().GetResult();
             var ownedGamesResult = Serialization.FromJsonStream<GameJoltWebResult<LibraryGamesResultPayload>>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
 
             return ownedGamesResult.Payload;
