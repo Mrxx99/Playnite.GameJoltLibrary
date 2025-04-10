@@ -36,18 +36,23 @@ public class LibraryGamesProvider
         var games = new List<GameMetadata>();
         using var httpClient = new HttpClient();
 
+
+        using var webView = _playniteAPI.WebViews.CreateOffscreenView();
+        var accountClient = new GameJoltAccountClient(webView);
+        var isLoggedIn = accountClient.GetIsUserLoggedIn();
+
         try
         {
             string userName = settings.UserName;
             string ownedGamesUrl = $"https://gamejolt.com/site-api/web/library/games/owned/@{userName}";
-            var ownedGames = GetGamesFromApi(httpClient, ownedGamesUrl, cancelToken);
+            var ownedGames = GetGamesFromApi(httpClient, webView, isLoggedIn, ownedGamesUrl, cancelToken);
 
             var libraryGames = ownedGames;
 
             if (settings.TreatFollowedGamesAsLibraryGames)
             {
                 string followedGamesUrl = $"https://gamejolt.com/site-api/web/library/games/followed/@{userName}";
-                var followedGames = GetGamesFromApi(httpClient, followedGamesUrl, cancelToken);
+                var followedGames = GetGamesFromApi(httpClient, webView, isLoggedIn, followedGamesUrl, cancelToken);
                 libraryGames = libraryGames.Concat(followedGames);
             }
 
@@ -81,7 +86,7 @@ public class LibraryGamesProvider
         return games;
     }
 
-    private IEnumerable<GameJoltGameMetadata> GetGamesFromApi(HttpClient httpClient, string getGamesUrl, CancellationToken cancelToken)
+    private IEnumerable<GameJoltGameMetadata> GetGamesFromApi(HttpClient httpClient, IWebView webView, bool isLoggedIn, string getGamesUrl, CancellationToken cancelToken)
     {
         bool isFirstRequest = true;
         int currentPage = 1;
@@ -90,7 +95,10 @@ public class LibraryGamesProvider
 
         while (currentPage <= totalPages)
         {
-            var gamesOnPage = GetGamesFromApi(httpClient, getGamesUrl, currentPage, out int totalGames, out int gamesPerPage, cancelToken);
+            var gamesOnPage = isLoggedIn
+                ? GetGamesFromApiUsingWebView(webView, getGamesUrl, currentPage, out int totalGames, out int gamesPerPage, cancelToken)
+                : GetGamesFromApi(httpClient, getGamesUrl, currentPage, out totalGames, out gamesPerPage, cancelToken);
+
             games.AddRange(gamesOnPage); 
 
             if (isFirstRequest)
@@ -103,6 +111,33 @@ public class LibraryGamesProvider
         }
 
         return games;
+    }
+
+    private IEnumerable<GameJoltGameMetadata> GetGamesFromApiUsingWebView(IWebView webView, string getGamesUrl, int pageNumber, out int totalGames, out int gamesPerPage, CancellationToken cancelToken)
+    {
+        var result = _retryOwnedGamesPolicy.ExecuteAndCapture(_ =>
+        {
+            string url = $"{getGamesUrl}?page={pageNumber}";
+            webView.NavigateAndWait(url);
+
+            var stringContent = webView.GetPageText();
+            var ownedGamesResult = Serialization.FromJson<GameJoltWebResult<LibraryGamesResultPayload>>(stringContent);
+
+            return ownedGamesResult.Payload;
+        }, cancelToken);
+
+        if (result.Outcome is OutcomeType.Failure)
+        {
+            totalGames = 0;
+            gamesPerPage = 0;
+            return [];
+        }
+
+        var payload = result.Result;
+
+        totalGames = payload.GamesCount;
+        gamesPerPage = payload.PerPage;
+        return payload.Games;
     }
 
     private IEnumerable<GameJoltGameMetadata> GetGamesFromApi(HttpClient httpClient, string getGamesUrl, int pageNumber, out int totalGames, out int gamesPerPage, CancellationToken cancelToken)
