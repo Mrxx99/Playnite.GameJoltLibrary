@@ -2,9 +2,12 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:system="clr-namespace:System;assembly=mscorlib">
     <system:String x:Key="LOCGameJoltImportInstalledGames">_Installierte Spiele importieren</system:String>
     <system:String x:Key="LOCGameJoltImportLibraryGames">_Nicht installierte Spiele importieren</system:String>
-    <system:String x:Key="LOCGameJoltTreatFollowedGamesAsLibraryGames">_Gefolgte Spiele as nicht installierte Spiele importieren</system:String>
+    <system:String x:Key="LOCGameJoltTryAuthenticate">Versuche dich in den Plugin-Einstellungen zu authentifizieren.</system:String>
+    <system:String x:Key="LOCGameJoltTreatFollowedGamesAsLibraryGames">_Gefolgte Spiele als nicht installierte Spiele importieren</system:String>
     <system:String x:Key="LOCGameJoltUserName">Game Jolt _Benutzername:</system:String>
     <system:String x:Key="LOCGameJoltUserNotFoundError">Game Jolt Benutzer '{0}' konnte nicht gefunden werden.</system:String>
     <system:String x:Key="LOCGameJoltSettingChangesNote">Das Ändern einer dieser Optionen erfordert eine Aktualisierung der Bibliothek (F5) oder einen Neustart von Playnite.</system:String>
     <system:String x:Key="LOCGameJoltReportToGithub">Schlage Verbesserungen vor oder melde einen Fehler.</system:String>
+    <system:String x:Key="LOCGameJoltAuthenticateLabel">Authentifizieren</system:String>
+    <system:String x:Key="LOCGameJoltLogout">Abmelden</system:String>
 </ResourceDictionary>

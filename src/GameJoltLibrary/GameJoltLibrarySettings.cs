@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Windows.Input;
 using Playnite.SDK;
 using Playnite.SDK.Data;
 
@@ -15,7 +16,7 @@ namespace GameJoltLibrary
         public bool ImportInstalledGames { get => _importInstalledGames; set => SetValue(ref _importInstalledGames, value); }
 
         public bool ImportLibraryGames { get => _importLibraryGames; set => SetValue(ref _importLibraryGames, value); }
-        
+
         public bool TreatFollowedGamesAsLibraryGames { get => _treatFollowedGamesAsLibraryGames; set => SetValue(ref _treatFollowedGamesAsLibraryGames, value); }
 
         public string UserName { get => _userName; set => SetValue(ref _userName, value); }
@@ -77,6 +78,50 @@ namespace GameJoltLibrary
             // List of errors is presented to user if verification fails.
             errors = new List<string>();
             return true;
+        }
+
+        public bool IsUserLoggedIn
+        {
+            get
+            {
+                using var view = _plugin.PlayniteApi.WebViews.CreateOffscreenView();
+                var api = new GameJoltAccountClient(view);
+                return api.GetIsUserLoggedIn();
+            }
+        }
+
+        private RelayCommand authenticateCommand;
+        public ICommand AuthenticateCommand => authenticateCommand ??= new RelayCommand(Authenticate);
+
+        private void Authenticate()
+        {
+            using var backgroundView = _plugin.PlayniteApi.WebViews.CreateOffscreenView();
+            using var onScreenWebView = _plugin.PlayniteApi.WebViews.CreateView(700, 700);
+
+            var accountClient = new GameJoltAccountClient(backgroundView);
+            var account = accountClient.Authenticate(onScreenWebView, Settings.UserName);
+
+            if (account != null)
+            {
+                Settings.UserName = account.UserName;
+            }
+
+            OnPropertyChanged(nameof(IsUserLoggedIn));
+        }
+
+        private RelayCommand logoutCommand;
+        public ICommand LogoutCommand => logoutCommand ??= new RelayCommand(Logout);
+
+        private void Logout()
+        {
+            using var webView = _plugin.PlayniteApi.WebViews.CreateOffscreenView(new WebViewSettings
+            {
+                JavaScriptEnabled = true
+            });
+
+            webView.DeleteDomainCookies(".gamejolt.com");
+            webView.DeleteDomainCookies("gamejolt.com");
+            OnPropertyChanged(nameof(IsUserLoggedIn));
         }
     }
 }

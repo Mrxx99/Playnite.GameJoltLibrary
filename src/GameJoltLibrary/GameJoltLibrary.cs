@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Windows.Controls;
 using GameJoltLibrary.Exceptions;
 using GameJoltLibrary.Helpers;
@@ -95,9 +96,14 @@ namespace GameJoltLibrary
                     LibraryGamesProvider.RemoveLibraryGames();
                     PlayniteApi.Notifications.NotifyUserNotFound(userName, this);
                 }
+                catch (HttpRequestException ex)
+                {
+                    _logger.Error(ex, "Failed to import Game Jolt library games.");
+                    PlayniteApi.Notifications.NotifyImportErrorFromApi(ex, this);
+                }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex, "Failed to import library Game Jolt games.");
+                    _logger.Error(ex, "Failed to import Game Jolt games.");
                     importError = ex;
                 }
             }

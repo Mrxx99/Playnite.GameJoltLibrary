@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Web;
-using System.Xml.Linq;
 using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Dom.Html;
@@ -70,7 +69,20 @@ namespace GameJoltLibrary
             // prefer reading meta data online because it contains more information
             try
             {
-                var onlineGameMetadata = GetOnlineMetadata(game.GameId);
+                using var webView = _playniteAPI.WebViews.CreateOffscreenView();
+                var accountClient = new GameJoltAccountClient(webView);
+
+                GameJoltGameMetadata onlineGameMetadata;
+
+                if (accountClient.GetIsUserLoggedIn())
+                {
+                    onlineGameMetadata = GetOnlineMetadataUsingWebView(game.GameId, webView);
+                }
+                else
+                {
+                    onlineGameMetadata = GetOnlineMetadata(game.GameId);
+                }
+
                 ApplyMetadata(game, metadata, onlineGameMetadata);
             }
             catch (Exception ex)
@@ -140,6 +152,21 @@ namespace GameJoltLibrary
                 var result = http.GetAsync(gameDiscoverUrl).GetAwaiter().GetResult();
 
                 var resultObj = Serialization.FromJsonStream<GameJoltWebResult<LibraryGameResultPayload>>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
+                return resultObj.Payload.Game;
+            });
+
+            return metaData;
+        }
+
+        private GameJoltGameMetadata GetOnlineMetadataUsingWebView(string gameId, IWebView webView)
+        {
+            string gameDiscoverUrl = $"https://gamejolt.com/site-api/web/discover/games/{gameId}";
+
+            var metaData = _retryMetadataPolicy.Execute(() =>
+            {
+                webView.NavigateAndWait(gameDiscoverUrl);
+                var stringContent = webView.GetPageText();
+                var resultObj = Serialization.FromJson<GameJoltWebResult<LibraryGameResultPayload>>(stringContent);
                 return resultObj.Payload.Game;
             });
 
