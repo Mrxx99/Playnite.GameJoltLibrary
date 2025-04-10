@@ -2,6 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:system="clr-namespace:System;assembly=mscorlib">
     <system:String x:Key="LOCGameJoltImportInstalledGames">_Installierte Spiele importieren</system:String>
     <system:String x:Key="LOCGameJoltImportLibraryGames">_Nicht installierte Spiele importieren</system:String>
+    <system:String x:Key="LOCGameJoltTryAuthenticate">Versuche dich in den Plugin-Einstellungen zu authentifizieren.</system:String>
     <system:String x:Key="LOCGameJoltTreatFollowedGamesAsLibraryGames">_Gefolgte Spiele als nicht installierte Spiele importieren</system:String>
     <system:String x:Key="LOCGameJoltUserName">Game Jolt _Benutzername:</system:String>
     <system:String x:Key="LOCGameJoltUserNotFoundError">Game Jolt Benutzer '{0}' konnte nicht gefunden werden.</system:String>
