@@ -43,8 +43,8 @@
                  Text="{Binding Settings.UserName}"
                  IsEnabled="{Binding Settings.ImportLibraryGames}"/>
 
-            <Button Content="Authenticate" Command="{Binding AuthenticateCommand}" IsEnabled="{Binding IsUserLoggedIn, Converter={StaticResource InverseBoolConverter}}" />
-            <Button Content="Logout" Command="{Binding LogoutCommand}"  IsEnabled="{Binding IsUserLoggedIn}"/>
+            <Button Content="{DynamicResource LOCGameJoltAuthenticateLabel}" Command="{Binding AuthenticateCommand}" IsEnabled="{Binding IsUserLoggedIn, Converter={StaticResource InverseBoolConverter}}" />
+            <Button Content="{DynamicResource LOCGameJoltLogout}" Command="{Binding LogoutCommand}"  IsEnabled="{Binding IsUserLoggedIn}"/>
 
             <CheckBox DockPanel.Dock="Top"
                   Margin="0,15,0,0"
