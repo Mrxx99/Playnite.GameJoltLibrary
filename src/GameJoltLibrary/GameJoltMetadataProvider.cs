@@ -133,6 +133,8 @@ namespace GameJoltLibrary
 
             using var http = new HttpClient();
 
+            http.DefaultRequestHeaders.Add("User-Agent", $"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0 Playnite/{API.Instance.ApplicationInfo.ApplicationVersion.ToString(2)}");
+
             var metaData = _retryMetadataPolicy.Execute(() =>
             {
                 var result = http.GetAsync(gameDiscoverUrl).GetAwaiter().GetResult();
