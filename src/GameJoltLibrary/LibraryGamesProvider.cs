@@ -36,11 +36,12 @@ public class LibraryGamesProvider
         var games = new List<GameMetadata>();
         using var httpClient = new HttpClient();
 
+        httpClient.DefaultRequestHeaders.Add("User-Agent", $"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0 Playnite/{API.Instance.ApplicationInfo.ApplicationVersion.ToString(2)}");
 
         using var webView = _playniteAPI.WebViews.CreateOffscreenView();
         var accountClient = new GameJoltAccountClient(webView);
         var isLoggedIn = accountClient.GetIsUserLoggedIn();
-
+      
         try
         {
             string userName = settings.UserName;
@@ -154,7 +155,7 @@ public class LibraryGamesProvider
             result.EnsureSuccessStatusCode();
 
             var stringContent = result.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-
+            string tt = result.Content.ReadAsStringAsync().GetAwaiter().GetResult();
             var ownedGamesResult = Serialization.FromJsonStream<GameJoltWebResult<LibraryGamesResultPayload>>(result.Content.ReadAsStreamAsync().GetAwaiter().GetResult());
 
             return ownedGamesResult.Payload;
