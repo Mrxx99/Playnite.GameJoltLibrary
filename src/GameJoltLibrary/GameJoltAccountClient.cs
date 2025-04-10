@@ -36,11 +36,6 @@ internal class GameJoltAccountClient
 
             if (!args.IsLoading)
             {
-                if (Regex.IsMatch(address, @"https:\/\/gamejolt\.com\/login\/?$") && !string.IsNullOrEmpty(userName))
-                {
-                    // set username input element value
-                    var result = await onScreenWebView.EvaluateScriptAsync(@$"this.document.getElementsByName(""username"")[0].value = ""{userName}"";");
-                }
                 if (!firstStartPageAfterLogin && Regex.IsMatch(address, @"https:\/\/gamejolt\.com\/?$"))
                 {
                     firstStartPageAfterLogin = true;
