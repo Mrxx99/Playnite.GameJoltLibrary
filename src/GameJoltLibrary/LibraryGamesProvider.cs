@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using GameJoltLibrary.Exceptions;
@@ -108,12 +109,14 @@ public class LibraryGamesProvider
     {
         var payload = _retryOwnedGamesPolicy.Execute(() =>
         {
-            var result = httpClient.GetAsync($"{getGamesUrl}?page={pageNumber}", cancelToken).GetAwaiter().GetResult();
-
-            if (result.StatusCode == System.Net.HttpStatusCode.NotFound)
+            string url = $"{getGamesUrl}?page={pageNumber}";
+            var result = httpClient.GetAsync(url, cancelToken).GetAwaiter().GetResult();
+            if (result.StatusCode == HttpStatusCode.NotFound)
             {
                 throw new UserNotFoundException();
             }
+
+            result.EnsureSuccessStatusCode();
 
             var stringContent = result.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 
