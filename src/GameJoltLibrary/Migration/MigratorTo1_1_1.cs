@@ -7,7 +7,7 @@ namespace GameJoltLibrary.Migration;
 
 public static class MigratorTo1_1_1
 {
-    public static void Migrate(IPlayniteAPI playniteAPI, GameJoltLibrarySettings settings, InstalledGamesProvider installedGamesProvider)
+    public static void Migrate(IPlayniteAPI playniteAPI, InstalledGamesProvider installedGamesProvider)
     {
         using (playniteAPI.Database.BufferedUpdate())
         {
@@ -18,7 +18,7 @@ public static class MigratorTo1_1_1
             foreach (var installedGame in gameJoltGames)
             {
                 IReadOnlyList<ExecutablePackage> packagesForGame = null;
-                foreach (var gameAction in installedGame.GameActions.ToArray())
+                foreach (var gameAction in installedGame.GameActions?.ToArray() ?? [])
                 {
                     if (gameAction.IsPlayAction && gameAction.Arguments is null && gameAction.AdditionalArguments is null)
                     {

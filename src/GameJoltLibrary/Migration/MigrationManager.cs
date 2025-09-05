@@ -20,7 +20,7 @@ public class MigrationManager
         {
             if (lastMigratedVesion < new Version("1.1.1"))
             {
-                MigratorTo1_1_1.Migrate(_gameJoltLibrary.PlayniteApi, _gameJoltLibrary.Settings, _gameJoltLibrary.InstalledGamesProvider);
+                MigratorTo1_1_1.Migrate(_gameJoltLibrary.PlayniteApi, _gameJoltLibrary.InstalledGamesProvider);
             }
 
             _gameJoltLibrary.Settings.LibraryVersion = currentVersion;
