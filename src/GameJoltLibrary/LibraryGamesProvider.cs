@@ -17,6 +17,7 @@ namespace GameJoltLibrary;
 
 public class LibraryGamesProvider
 {
+    private static readonly bool _useApiDirectly = false;
     private readonly IPlayniteAPI _playniteAPI;
     private readonly ILogger _logger;
     private readonly RetryPolicy<LibraryGamesResultPayload> _retryOwnedGamesPolicy;
@@ -96,7 +97,7 @@ public class LibraryGamesProvider
 
         while (currentPage <= totalPages)
         {
-            var gamesOnPage = isLoggedIn
+            var gamesOnPage = isLoggedIn || !_useApiDirectly
                 ? GetGamesFromApiUsingWebView(webView, getGamesUrl, currentPage, out int totalGames, out int gamesPerPage, cancelToken)
                 : GetGamesFromApi(httpClient, getGamesUrl, currentPage, out totalGames, out gamesPerPage, cancelToken);
 
