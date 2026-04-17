@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Web;
 using AngleSharp;
 using AngleSharp.Dom;
@@ -134,7 +135,12 @@ namespace GameJoltLibrary
             }
 
             // Description
-            metadata.Description = GetDescription(game.Name, gameJoltMetadata.StorePageLink);
+            metadata.Description = GetDescription(game.Name, gameJoltMetadata.StorePageLink, out var tags);
+
+            foreach (var tag in tags)
+            {
+                metadata.Tags.Add(new MetadataNameProperty(tag.TrimStart('#')));
+            }
 
             metadata.Links.Add(new Link("Game Jolt Store Page", gameJoltMetadata.StorePageLink));
         }
@@ -174,8 +180,9 @@ namespace GameJoltLibrary
             return metaData;
         }
 
-        public string GetDescription(string gameName, string storePage, IBrowsingContext browsingContext)
+        private string GetDescription(string gameName, string storePage, IBrowsingContext browsingContext, out string[] tags)
         {
+            tags = [];
             try
             {
                 IElement descriptionElement = null;
@@ -196,6 +203,11 @@ namespace GameJoltLibrary
                     return null;
                 }
 
+                tags = descriptionElement.QuerySelectorAll<IHtmlAnchorElement>("a")
+                    .Where(a => Regex.IsMatch(a.Text, @"#\w+"))
+                    .Select(a => a.Text)
+                    .ToArray();
+
                 FixRelativeLinks(descriptionElement);
                 string description = descriptionElement?.InnerHtml;
                 return description;
@@ -207,14 +219,15 @@ namespace GameJoltLibrary
             }
         }
 
-        private string GetDescription(string gameName, string storePage)
+        private string GetDescription(string gameName, string storePage, out string[] tags)
         {
+            tags = [];
             try
             {
                 var config = Configuration.Default.WithDefaultLoader();
                 var context = BrowsingContext.New(config);
 
-                return GetDescription(gameName, storePage, context);
+                return GetDescription(gameName, storePage, context, out tags);
             }
             catch (Exception ex)
             {
