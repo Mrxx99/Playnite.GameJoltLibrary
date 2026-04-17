@@ -73,8 +73,13 @@ public class LibraryGamesProvider
                     Name = ownedGame.Title,
                     IsInstalled = false,
                     Links = new List<Link> { new Link("Game Jolt Store Page", ownedGame.StorePageLink) },
-                    Developers = new HashSet<MetadataProperty> { new MetadataNameProperty(ownedGame.Developer.DisplayName) }
+                    Developers = new HashSet<MetadataProperty> { new MetadataNameProperty(ownedGame.Developer.DisplayName) },
                 };
+
+                if (ownedGame.PublishedOn.HasValue)
+                {
+                    game.ReleaseDate = new ReleaseDate(DateTimeOffset.FromUnixTimeMilliseconds(ownedGame.PublishedOn.Value).DateTime);
+                }
 
                 games.Add(game);
             }
