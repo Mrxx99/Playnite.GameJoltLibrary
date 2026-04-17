@@ -19,6 +19,7 @@ namespace GameJoltLibrary
 {
     public class GameJoltMetadataProvider : LibraryMetadataProvider
     {
+        private static readonly bool _useApiDirectly = false;
         private readonly IPlayniteAPI _playniteAPI;
         private readonly ILogger _logger;
         private readonly RetryPolicy<IElement> _retryDescriptionPolicy;
@@ -74,7 +75,7 @@ namespace GameJoltLibrary
 
                 GameJoltGameMetadata onlineGameMetadata;
 
-                if (accountClient.GetIsUserLoggedIn())
+                if (!_useApiDirectly)
                 {
                     onlineGameMetadata = GetOnlineMetadataUsingWebView(game.GameId, webView);
                 }
