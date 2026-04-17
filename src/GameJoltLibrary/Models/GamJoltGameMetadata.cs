@@ -28,6 +28,9 @@ namespace GameJoltLibrary.Models
         [SerializationPropertyName("modified_on")]
         public long ModifiedOn { get; set; }
 
+        [SerializationPropertyName("published_on")]
+        public long? PublishedOn { get; set; }
+
         [SerializationPropertyName("compatibility")]
         public Compatibility Compatibility { get; set; }
 

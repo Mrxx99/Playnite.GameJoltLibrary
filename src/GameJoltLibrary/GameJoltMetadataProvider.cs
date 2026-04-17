@@ -143,6 +143,11 @@ namespace GameJoltLibrary
             }
 
             metadata.Links.Add(new Link("Game Jolt Store Page", gameJoltMetadata.StorePageLink));
+
+            if (gameJoltMetadata.PublishedOn.HasValue)
+            {
+                metadata.ReleaseDate = new ReleaseDate(DateTimeOffset.FromUnixTimeMilliseconds(gameJoltMetadata.PublishedOn.Value).DateTime);
+            }
         }
 
 
